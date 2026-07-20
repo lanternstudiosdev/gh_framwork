@@ -1,0 +1,445 @@
+# HR subject area — production entity catalog (Workday).
+#
+# load_pattern default: lakeflow_connect
+# Table names: {source_key}_{entity_name} e.g. workday_current_employee_list
+# Schemas only: bronze | bronze_restricted | silver | silver_restricted | gold | gold_restricted
+#
+# Ownership (Connect path):
+#   Connect writes:  {data_catalog}.{bronze|bronze_restricted}.{workday_*}__src
+#   Framework DLT:   {data_catalog}.{bronze|bronze_restricted}.{workday_*}  (final bronze)
+# {data_catalog} is resolved at Config Apply from env (edw_hr_dev / edw_hr_qat / ...).
+#
+# Fallback: load_pattern api_extract → UC Volume → Auto Loader → same final bronze names.
+
+subject_area_key: hr
+entities:
+- entity_key: hr_current_employee_list
+  source_key: workday
+  entity_name: current_employee_list
+  source_object: CurrentEmployeeList
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - employee_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_current_employee_list
+  target_silver_table: workday_current_employee_list
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/CurrentEmployeeList
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+        include_terminated: 'false'
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+      cloudFiles.inferColumnTypes: 'true'
+    bronze_schema_evolution_mode: addNewColumns
+    bronze_accumulate_history: true
+    silver_schema_evolution_enabled: true
+    silver_allow_new_columns: true
+    silver_preserve_dropped_columns: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: CurrentEmployeeList
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_future_employee_list
+  source_key: workday
+  entity_name: future_employee_list
+  source_object: FutureEmployeeList
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - employee_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_future_employee_list
+  target_silver_table: workday_future_employee_list
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/FutureEmployeeList
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: FutureEmployeeList
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_payroll_employee_list
+  source_key: workday
+  entity_name: payroll_employee_list
+  source_object: PayrollEmployeeList
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - employee_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_payroll_employee_list
+  target_silver_table: workday_payroll_employee_list
+  restricted: true
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/PayrollEmployeeList
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: PayrollEmployeeList
+      connection_name: workday_connect
+      target_schema: bronze_restricted
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_employee_address
+  source_key: workday
+  entity_name: employee_address
+  source_object: EmployeeAddress
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - employee_id
+  - address_type
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_employee_address
+  target_silver_table: workday_employee_address
+  restricted: true
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/EmployeeAddress
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: EmployeeAddress
+      connection_name: workday_connect
+      target_schema: bronze_restricted
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_employee_phones
+  source_key: workday
+  entity_name: employee_phones
+  source_object: EmployeePhones
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - employee_id
+  - phone_type
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_employee_phones
+  target_silver_table: workday_employee_phones
+  restricted: true
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/EmployeePhones
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: EmployeePhones
+      connection_name: workday_connect
+      target_schema: bronze_restricted
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_worker_skills
+  source_key: workday
+  entity_name: worker_skills
+  source_object: WorkerSkills
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - worker_id
+  - skill_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_worker_skills
+  target_silver_table: workday_worker_skills
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/WorkerSkills
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: WorkerSkills
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_worker_education
+  source_key: workday
+  entity_name: worker_education
+  source_object: WorkerEducation
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - worker_id
+  - education_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_worker_education
+  target_silver_table: workday_worker_education
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/WorkerEducation
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: WorkerEducation
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_worker_language
+  source_key: workday
+  entity_name: worker_language
+  source_object: WorkerLanguage
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - worker_id
+  - language_code
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_worker_language
+  target_silver_table: workday_worker_language
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/WorkerLanguage
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: WorkerLanguage
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_worker_certification
+  source_key: workday
+  entity_name: worker_certification
+  source_object: WorkerCertification
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - worker_id
+  - certification_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_worker_certification
+  target_silver_table: workday_worker_certification
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/WorkerCertification
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: WorkerCertification
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_location
+  source_key: workday
+  entity_name: location
+  source_object: Location
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - location_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_location
+  target_silver_table: workday_location
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/Location
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: Location
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_location_hierarchy
+  source_key: workday
+  entity_name: location_hierarchy
+  source_object: LocationHierarchy
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - location_id
+  - parent_location_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_location_hierarchy
+  target_silver_table: workday_location_hierarchy
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/Location_Hierarchy
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: LocationHierarchy
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_job_category
+  source_key: workday
+  entity_name: job_category
+  source_object: JobCategory
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - job_category_id
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_job_category
+  target_silver_table: workday_job_category
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/JobCategory
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: JobCategory
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+- entity_key: hr_holiday_calendar
+  source_key: workday
+  entity_name: holiday_calendar
+  source_object: HolidayCalendar
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - calendar_id
+  - holiday_date
+  watermark_column: _source_extract_ts
+  target_bronze_table: workday_holiday_calendar
+  target_silver_table: workday_holiday_calendar
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: true
+  load_config:
+    api:
+      endpoint_path: /customreport2/{tenant}/HolidayCalendar
+      http_method: GET
+      response_format: json
+      params:
+        format: json
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+    bronze_accumulate_history: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: HolidayCalendar
+      connection_name: workday_connect
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect

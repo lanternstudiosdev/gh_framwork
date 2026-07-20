@@ -1,0 +1,58 @@
+# Data Contract for HR Current Employee List
+# This is the authoritative definition (Hybrid Option D).
+# On deploy, this is upserted into platform_control.control.data_contracts
+# and used to drive quality_rules generation + documentation.
+
+entity_key: hr_current_employee_list
+version: 3
+effective_from: "2025-09-01"
+
+schema:
+  columns:
+    - name: employee_id
+      type: string
+      primary_key: true
+      nullable: false
+      description: "Unique employee identifier from Workday"
+    - name: manager_id
+      type: string
+      nullable: true
+      description: "Reference to the employee's manager (self-referential)"
+    - name: hire_date
+      type: date
+      nullable: false
+    - name: termination_date
+      type: date
+      nullable: true
+    - name: status
+      type: string
+      nullable: false
+      allowed_values: ["ACTIVE", "ON_LEAVE", "TERMINATED", "SUSPENDED"]
+    - name: department
+      type: string
+      nullable: false
+    - name: _bronze_ingest_ts
+      type: timestamp
+      description: "Technical column added in Bronze"
+    - name: _source_extract_ts
+      type: timestamp
+
+business_rules:
+  - "Active employees must have a hire_date"
+  - "termination_date is only set when status = 'TERMINATED'"
+  - "hire_date cannot be in the future"
+  - "status must be one of the allowed values"
+
+quality_expectations_summary:
+  - "Bronze: Structural and technical expectations (nulls, types, row count freshness)"
+  - "Silver: Business key uniqueness, referential integrity to manager, hire_date present when active"
+  - "Gold: Aggregate consistency checks (headcount)"
+
+metadata:
+  owner: hr-team
+  domain: hr
+  sensitivity: internal
+  refresh_frequency: daily
+  source: workday_connect
+
+# Note: Detailed expectations live in quality_rules/ files.

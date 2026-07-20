@@ -1,0 +1,92 @@
+# Sample HR entities — aligned with production framework conventions.
+# Tables: workday_{entity_name}
+# Connect: {data_catalog}.bronze.workday_*__src → framework bronze workday_*
+# Catalog resolved at apply: edw_hr_dev (from subject_defaults / env)
+
+subject_area_key: hr
+
+entities:
+  - entity_key: hr_employees
+    source_key: workday
+    entity_name: employees
+    source_object: employees
+    load_pattern: lakeflow_connect
+    primary_key_columns: ["employee_id"]
+    watermark_column: "_source_extract_ts"
+    target_bronze_table: workday_employees
+    target_silver_table: workday_employees
+    restricted: false
+    supports_full_reprocess: true
+    reprocess_strategy: full_refresh
+
+    load_config:
+      lakeflow_connect_config:
+        mode: incremental
+        source_object: employees
+        connection_name: workday_connect
+        target_schema: bronze
+        connect_output_table: "{data_catalog}.bronze.workday_employees__src"
+        bronze_writer: framework_dlt
+        connect_writer: lakeflow_connect
+      # Fallback path if load_pattern overridden to api_extract
+      landing_volume:
+        volume_catalog: edw_hr_dev
+        volume_schema: files
+        volume_name: landing
+      landing_subpath: raw/workday/employees
+      archive_subpath: archive/workday/employees
+      api:
+        endpoint_path: "/customreport2/{tenant}/Employees"
+        http_method: GET
+        response_format: json
+        params:
+          format: json
+      auto_loader_options:
+        cloudFiles.format: csv
+        cloudFiles.schemaEvolutionMode: addNewColumns
+        cloudFiles.header: "true"
+        cloudFiles.inferColumnTypes: "true"
+      bronze_schema_evolution_mode: addNewColumns
+      bronze_accumulate_history: true
+      silver_schema_evolution_enabled: true
+      silver_allow_new_columns: true
+      silver_preserve_dropped_columns: true
+
+  - entity_key: hr_departments
+    source_key: workday
+    entity_name: departments
+    source_object: departments
+    load_pattern: lakeflow_connect
+    primary_key_columns: ["department_id"]
+    watermark_column: "_source_extract_ts"
+    target_bronze_table: workday_departments
+    target_silver_table: workday_departments
+    restricted: false
+    supports_full_reprocess: true
+    reprocess_strategy: full_refresh
+
+    load_config:
+      lakeflow_connect_config:
+        mode: incremental
+        source_object: departments
+        connection_name: workday_connect
+        target_schema: bronze
+        connect_output_table: "{data_catalog}.bronze.workday_departments__src"
+        bronze_writer: framework_dlt
+        connect_writer: lakeflow_connect
+      landing_volume:
+        volume_catalog: edw_hr_dev
+        volume_schema: files
+        volume_name: landing
+      landing_subpath: raw/workday/departments
+      archive_subpath: archive/workday/departments
+      api:
+        endpoint_path: "/customreport2/{tenant}/Departments"
+        http_method: GET
+        params:
+          format: json
+      auto_loader_options:
+        cloudFiles.format: csv
+        cloudFiles.header: "true"
+      bronze_schema_evolution_mode: addNewColumns
+      bronze_accumulate_history: true

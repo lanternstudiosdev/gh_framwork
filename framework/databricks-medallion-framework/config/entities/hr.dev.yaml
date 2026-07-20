@@ -1,0 +1,34 @@
+# Dev environment overlay for HR entities.
+# Merged onto matching entity_key rows from hr.yaml at Config Apply.
+# Default remains lakeflow_connect (Workday via Connect).
+
+subject_area_key: hr
+environment: dev
+
+subject_defaults:
+  data_catalog: edw_hr_dev
+  control_catalog: edw_platform_control_dev
+  landing_volume:
+    volume_catalog: edw_hr_dev
+    volume_schema: files
+    volume_name: landing
+
+# Per-entity overrides. Example — force one entity to API+Volume fallback:
+# entities:
+#   - entity_key: hr_current_employee_list
+#     load_pattern: api_extract
+#     load_config:
+#       api:
+#         endpoint_path: "/customreport2/{tenant}/CurrentEmployeeList"
+#         params:
+#           format: json
+#
+# subject_defaults.data_catalog is applied to all entities; connect_output_table
+# placeholders {data_catalog} resolve at Config Apply (no hardcoded edw_hr_dev in base YAML).
+#
+# entities:
+#   - entity_key: hr_current_employee_list
+#     load_config:
+#       lakeflow_connect_config:
+#         connection_name: workday_connect_dev
+entities: []

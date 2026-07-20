@@ -1,0 +1,15 @@
+# Dev overlay for Workday source (merged over workday.yaml at Config Apply).
+source_key: workday
+
+connection:
+  secret_scope: "kv-hr-dev"
+  base_url: "https://wd2-impl-services1.workday.com"
+
+connect:
+  connection_name: workday_connect_dev
+
+# Keep Lakeflow Connect as default in dev as well.
+# To force API extract for all entities in an emergency, set:
+#   default_load_pattern: api_extract
+# and/or per-entity load_pattern in config/entities/hr.dev.yaml
+default_load_pattern: lakeflow_connect

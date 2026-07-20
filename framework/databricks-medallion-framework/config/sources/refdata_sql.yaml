@@ -1,0 +1,44 @@
+# Reference-data SQL source — Lakeflow Connect (SQL Server / database) is default.
+# Secret *names* only in Git; values live in Key Vault → secret scope.
+# Env overlays: config/sources/refdata_sql.{env}.yaml
+#
+# STARTER SCAFFOLD: replace connection_name and connection details with your real
+# Lakeflow Connect database connection before enabling refdata pipelines.
+
+source_key: refdata_sql
+source_type: lakeflow_connect
+subject_area_key: refdata
+description: Reference / master data from a SQL database via Lakeflow Connect.
+
+default_load_pattern: lakeflow_connect
+
+connect:
+  # TODO: name of the UC connection created for this database in Lakeflow Connect
+  connection_name: refdata_sql_connect
+  connector_type: sqlserver
+  defaults:
+    mode: incremental
+
+load_defaults:
+  auto_loader_options:
+    cloudFiles.format: json
+    cloudFiles.schemaEvolutionMode: addNewColumns
+
+connection:
+  # Used only if an entity falls back to api_extract (uncommon for refdata)
+  base_url: ""
+  auth_type: basic
+  secret_scope: "kv-refdata-dev"
+  secrets:
+    username: "refdata-sql-username"
+    password: "refdata-sql-password"
+
+extract_defaults:
+  http_method: GET
+  response_format: json
+  landing_file_format: json
+  timeout_seconds: 120
+  page_size: 1000
+  pagination:
+    style: none
+  common_params: {}

@@ -1,0 +1,33 @@
+# Subject-area defaults for Sales (catalogs, volumes, schema naming).
+# Per-environment catalog names use the pattern edw_sales_{env}.
+
+subject_area_key: sales
+description: Sales / Dynamics 365 CRM domain
+
+catalogs:
+  # Resolved with environment: edw_sales_dev, edw_sales_qat, edw_sales_prod
+  data_catalog_pattern: "edw_sales_{env}"
+  # Platform control (shared across subjects)
+  control_catalog_pattern: "edw_platform_control_{env}"
+
+schemas:
+  bronze: bronze
+  silver: silver
+  gold: gold
+  bronze_restricted: bronze_restricted
+  silver_restricted: silver_restricted
+  gold_restricted: gold_restricted
+  files: files
+
+# UC External Volume for landing (API extract lands here before Bronze Auto Loader)
+landing_volume:
+  volume_schema: files
+  volume_name: landing
+  raw_prefix: raw
+  archive_prefix: archive
+  archive_partitioning: "yyyy/MM/dd"
+
+published_volume:
+  enabled: false
+  volume_schema: files
+  volume_name: published

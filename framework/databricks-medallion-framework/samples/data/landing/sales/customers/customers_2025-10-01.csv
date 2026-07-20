@@ -1,0 +1,7 @@
+customer_id,company_name,industry,region,email,created_date
+CUST-001,Acme Corp,Technology,North America,procurement@acmecorp.com,2023-01-12
+CUST-002,Globex Industries,Manufacturing,Europe,sales@globex.eu,2022-08-05
+CUST-003,Initech LLC,Technology,North America,info@initech.com,2024-02-20
+CUST-004,Umbrella Corp,Healthcare,Asia Pacific,contracts@umbrella.jp,2021-11-30
+CUST-005,Stark Industries,Defense,North America,procure@stark.com,2023-05-18
+CUST-006,Wayne Enterprises,Finance,Europe,business@wayne.co.uk,2024-03-01

@@ -1,0 +1,43 @@
+# Dynamics 365 source — API extract path (Web API v9.2) into UC Volumes.
+# Secret *names* only in Git; values live in Key Vault → secret scope.
+# Env overlays: config/sources/dynamics365.{env}.yaml
+
+source_key: dynamics365
+source_type: api_extract
+subject_area_key: sales
+description: Dynamics 365 CRM via Dataverse Web API (OAuth2 client credentials).
+
+# Default for all entities under this source unless overridden on the entity or env overlay
+default_load_pattern: api_extract
+
+# Source-level load defaults inherited by entities that omit them (entity values win).
+load_defaults:
+  auto_loader_options:
+    cloudFiles.format: json
+    cloudFiles.schemaEvolutionMode: addNewColumns
+
+connection:
+  # TODO: point at your Dataverse org URL for each environment via overlays
+  base_url: "https://your-org.crm.dynamics.com"
+  api_path_prefix: "/api/data/v9.2"
+  auth_type: oauth2_client_credentials
+  secret_scope: "kv-sales-dev"
+  secrets:
+    client_id: "dynamics365-client-id"
+    client_secret: "dynamics365-client-secret"
+    tenant_id: "dynamics365-tenant-id"
+  # Azure AD token endpoint (fill tenant via overlay if not templated)
+  token_url: "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+  token_scope: "https://your-org.crm.dynamics.com/.default"
+
+extract_defaults:
+  http_method: GET
+  response_format: json
+  landing_file_format: json
+  timeout_seconds: 120
+  page_size: 1000
+  pagination:
+    # Dataverse uses @odata.nextLink cursor pagination
+    style: odata_next_link
+    next_link_field: "@odata.nextLink"
+  common_params: {}

@@ -1,0 +1,62 @@
+# Sales subject area — volume convention (stub until sales is productionized).
+
+subject_area_key: sales
+
+entities:
+  - entity_key: sales_opportunities
+    source_key: dynamics365
+    entity_name: opportunities
+    source_object: opportunities
+    load_pattern: api_extract
+    primary_key_columns: ["opportunity_id"]
+    watermark_column: "_source_extract_ts"
+    target_bronze_table: dynamics365_opportunities
+    target_silver_table: dynamics365_opportunities
+    restricted: false
+    supports_full_reprocess: true
+    reprocess_strategy: full_refresh
+    is_active: true
+    load_config:
+      landing_volume:
+        volume_catalog: edw_sales_dev
+        volume_schema: files
+        volume_name: landing
+      landing_subpath: raw/dynamics365/opportunities
+      archive_subpath: archive/dynamics365/opportunities
+      api:
+        endpoint_path: "/api/data/v9.2/opportunities"
+        http_method: GET
+        response_format: json
+        params:
+          $select: "opportunityid,name,statuscode"
+      auto_loader_options:
+        cloudFiles.format: json
+        cloudFiles.schemaEvolutionMode: addNewColumns
+
+  - entity_key: sales_contacts
+    source_key: dynamics365
+    entity_name: contacts
+    source_object: contacts
+    load_pattern: api_extract
+    primary_key_columns: ["contact_id"]
+    watermark_column: "_source_extract_ts"
+    target_bronze_table: dynamics365_contacts
+    target_silver_table: dynamics365_contacts
+    restricted: true
+    supports_full_reprocess: true
+    is_active: true
+    load_config:
+      landing_volume:
+        volume_catalog: edw_sales_dev
+        volume_schema: files
+        volume_name: landing
+      landing_subpath: raw/dynamics365/contacts
+      archive_subpath: archive/dynamics365/contacts
+      api:
+        endpoint_path: "/api/data/v9.2/contacts"
+        http_method: GET
+        response_format: json
+        params: {}
+      auto_loader_options:
+        cloudFiles.format: json
+        cloudFiles.schemaEvolutionMode: addNewColumns

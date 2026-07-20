@@ -1,0 +1,23 @@
+department_id,department_name,manager_id,location,effective_from,effective_to,is_current,version,change_hash
+10,Engineering,4,New York,2019-01-01,2021-06-30,false,1,1234567890123456789
+10,Engineering,4,New York,2021-07-01,2023-03-15,false,2,2345678901234567890
+10,Engineering,4,New York,2023-03-16,,true,3,3456789012345678901
+20,Sales,8,Chicago,2019-01-01,2020-12-31,false,1,4567890123456789012
+20,Sales,8,Chicago,2021-01-01,2022-09-01,false,2,5678901234567890123
+20,Sales,8,Chicago,2022-09-02,,true,3,6789012345678901234
+30,HR,2,Remote,2019-01-01,,true,1,7890123456789012345
+40,Finance,15,London,2019-01-01,2024-01-31,false,1,8901234567890123456
+40,Finance,15,London,2024-02-01,,true,2,9012345678901234567
+50,Marketing,22,Austin,2020-05-01,,true,1,0123456789012345678
+60,Product,31,Seattle,2021-03-15,,true,1,1234567890123456789
+70,Legal,19,New York,2022-01-10,,true,1,2345678901234567890
+80,Operations,44,Chicago,2019-08-20,,true,1,3456789012345678901
+90,IT Infrastructure,7,Remote,2023-06-01,,true,1,4567890123456789012
+100,Data & Analytics,33,New York,2024-02-15,,true,1,5678901234567890123
+110,Customer Success,51,London,2021-09-01,,true,1,6789012345678901234
+120,Research,18,Austin,2020-01-15,,true,1,7890123456789012345
+130,Partner Ecosystem,27,Chicago,2022-11-01,,true,1,8901234567890123456
+140,Executive Office,1,New York,2019-01-01,,true,1,9012345678901234567
+150,Internal Audit,66,Remote,2023-01-20,,true,1,0123456789012345678
+# Seed/example for the referenced file. Full 100+ rows with SCD2 (no gaps: effective_to + 1 day = next effective_from or current) + change_hash (hash of tracked columns for efficient SCD2 change detection - best practice) produced by samples/scripts/generate_sample_data.py
+# Example contiguous: 2021-06-30 to 2021-07-01

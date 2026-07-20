@@ -1,0 +1,10 @@
+entity_key: hr_location
+layer: silver
+rules:
+  - rule_name: location_pk_not_null
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "location_id IS NOT NULL"
+    action_on_failure: fail
+    severity: critical
+    is_active: true

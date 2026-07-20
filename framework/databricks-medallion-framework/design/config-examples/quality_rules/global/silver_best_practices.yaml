@@ -1,0 +1,43 @@
+# Global / reusable Silver best-practice expectations
+# These are applied to many entities via the "is_default: true" mechanism or explicit inclusion.
+# enforcement_method supports the Hybrid model (Option 3).
+
+rules:
+  - rule_name: silver_not_null_business_keys
+    layer: silver
+    rule_type: expectation
+    enforcement_method: both
+    expression: "col IS NOT NULL"   # Used for native; library uses the rule_name
+    library_reference: best_practices.not_null
+    action_on_failure: fail
+    severity: critical
+    is_default: true
+
+  - rule_name: silver_row_count_freshness_24h
+    layer: silver
+    rule_type: freshness
+    enforcement_method: external_library
+    library_reference: best_practices.freshness_24h
+    action_on_failure: warn
+    severity: high
+    is_default: true
+    parameters:
+      max_age_hours: 24
+
+  - rule_name: silver_unique_business_key
+    layer: silver
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "COUNT(*) OVER (PARTITION BY {primary_key_columns}) = 1"
+    action_on_failure: fail
+    severity: critical
+    is_default: true
+
+  - rule_name: silver_no_future_dates
+    layer: silver
+    rule_type: expectation
+    enforcement_method: external_library
+    library_reference: best_practices.no_future_dates
+    action_on_failure: warn
+    severity: medium
+    is_default: false   # Opt-in per entity

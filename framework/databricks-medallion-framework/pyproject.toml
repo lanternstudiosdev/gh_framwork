@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "medallion-framework"
+version = "0.4.2"
+description = "Databricks medallion ingestion framework (control plane + HR pipelines)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pyyaml>=6.0"]
+
+[project.scripts]
+medallion-apply = "jobs.apply_control_config:main"
+medallion-api-extract = "jobs.api_extract:main"
+medallion-archive = "jobs.archive_landing:main"
+medallion-reprocess = "jobs.reprocess_dispatcher:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["lib*", "pipelines*", "jobs*"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]

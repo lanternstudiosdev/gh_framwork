@@ -1,0 +1,565 @@
+# Databricks Asset Bundle - Medallion Ingestion Framework
+#
+# P0 deploy surface (fixed):
+#   - Orchestration = resources.jobs (not resources.workflows)
+#   - Python jobs = spark_python_task (not notebook_task on .py)
+#   - Shared code = wheel artifact (packages: lib, pipelines, jobs)
+#   - Pipelines = entry .py file + wheel library
+
+bundle:
+  name: medallion-ingestion-framework
+
+sync:
+  include:
+    - ../src/**
+    - ../config/**
+    - ../sql/**
+    - ../pyproject.toml
+
+artifacts:
+  medallion_whl:
+    type: whl
+    path: ..
+    build: python -m pip install build && python -m build --wheel -o dist
+
+variables:
+  control_catalog:
+    description: Platform control catalog
+    default: edw_platform_control_dev
+  hr_catalog:
+    description: HR data catalog
+    default: edw_hr_dev
+  sales_catalog:
+    description: Sales data catalog
+    default: edw_sales_dev
+  refdata_catalog:
+    description: Reference data catalog
+    default: edw_refdata_dev
+  environment:
+    description: Environment name (dev/qat/prod)
+    default: dev
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      control_catalog: edw_platform_control_dev
+      hr_catalog: edw_hr_dev
+      sales_catalog: edw_sales_dev
+      refdata_catalog: edw_refdata_dev
+      environment: dev
+
+  qat:
+    mode: development
+    variables:
+      control_catalog: edw_platform_control_qat
+      hr_catalog: edw_hr_qat
+      sales_catalog: edw_sales_qat
+      refdata_catalog: edw_refdata_qat
+      environment: qat
+
+  prod:
+    mode: production
+    variables:
+      control_catalog: edw_platform_control_prod
+      hr_catalog: edw_hr_prod
+      sales_catalog: edw_sales_prod
+      refdata_catalog: edw_refdata_prod
+      environment: prod
+
+resources:
+  pipelines:
+    hr_workday_bronze:
+      name: hr_workday_bronze
+      catalog: ${var.hr_catalog}
+      schema: bronze
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: hr
+        source_key: workday
+        entity_keys: "*"
+        restricted_scope: "false"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/bronze_entry.py
+
+    hr_workday_bronze_restricted:
+      name: hr_workday_bronze_restricted
+      catalog: ${var.hr_catalog}
+      schema: bronze_restricted
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: hr
+        source_key: workday
+        entity_keys: "*"
+        restricted_scope: "true"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/bronze_entry.py
+
+    hr_workday_silver:
+      name: hr_workday_silver
+      catalog: ${var.hr_catalog}
+      schema: silver
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: hr
+        source_key: workday
+        entity_keys: "*"
+        restricted_scope: "false"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/silver_entry.py
+
+    hr_workday_silver_restricted:
+      name: hr_workday_silver_restricted
+      catalog: ${var.hr_catalog}
+      schema: silver_restricted
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: hr
+        source_key: workday
+        entity_keys: "*"
+        restricted_scope: "true"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/silver_entry.py
+
+    # --- Sales (source: dynamics365, API extract path) ---
+    # Uses the generic subject-agnostic entry modules; the only difference from HR
+    # is the catalog + subject_area_key/source_key configuration below.
+    sales_bronze:
+      name: sales_bronze
+      catalog: ${var.sales_catalog}
+      schema: bronze
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: sales
+        source_key: dynamics365
+        entity_keys: "*"
+        restricted_scope: "false"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/bronze_entry.py
+
+    sales_bronze_restricted:
+      name: sales_bronze_restricted
+      catalog: ${var.sales_catalog}
+      schema: bronze_restricted
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: sales
+        source_key: dynamics365
+        entity_keys: "*"
+        restricted_scope: "true"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/bronze_entry.py
+
+    sales_silver:
+      name: sales_silver
+      catalog: ${var.sales_catalog}
+      schema: silver
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: sales
+        source_key: dynamics365
+        entity_keys: "*"
+        restricted_scope: "false"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/silver_entry.py
+
+    sales_silver_restricted:
+      name: sales_silver_restricted
+      catalog: ${var.sales_catalog}
+      schema: silver_restricted
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: sales
+        source_key: dynamics365
+        entity_keys: "*"
+        restricted_scope: "true"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/silver_entry.py
+
+    # --- Reference data (source: refdata_sql via Lakeflow Connect) ---
+    # Starter scaffold. Populate config/entities/refdata.yaml (real tables +
+    # connection) before enabling in an orchestration schedule.
+    refdata_bronze:
+      name: refdata_bronze
+      catalog: ${var.refdata_catalog}
+      schema: bronze
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: refdata
+        source_key: refdata_sql
+        entity_keys: "*"
+        restricted_scope: "false"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/bronze_entry.py
+
+    refdata_silver:
+      name: refdata_silver
+      catalog: ${var.refdata_catalog}
+      schema: silver
+      channel: CURRENT
+      configuration:
+        control_catalog: ${var.control_catalog}
+        environment: ${var.environment}
+        subject_area_key: refdata
+        source_key: refdata_sql
+        entity_keys: "*"
+        restricted_scope: "false"
+      environment:
+        dependencies:
+          - ../dist/*.whl
+      libraries:
+        - file:
+            path: ../src/pipelines/silver_entry.py
+
+  jobs:
+    apply_control_config:
+      name: apply_control_config
+      parameters:
+        - name: control_catalog
+          default: ${var.control_catalog}
+        - name: environment
+          default: ${var.environment}
+        - name: config_root
+          # Bundle sync places config/ under the deployment file path
+          default: ${workspace.file_path}/config
+        - name: git_commit_sha
+          default: local-dev
+        - name: git_branch
+          default: main
+        - name: triggered_by
+          default: bundle
+      environments:
+        - environment_key: medallion_env
+          spec:
+            environment_version: "2"
+            dependencies:
+              - ../dist/*.whl
+              - pyyaml
+              - databricks-sdk
+      tasks:
+        - task_key: apply_declarative_config
+          environment_key: medallion_env
+          spark_python_task:
+            python_file: ../src/jobs/apply_control_config.py
+            parameters:
+              - "--control_catalog={{job.parameters.control_catalog}}"
+              - "--environment={{job.parameters.environment}}"
+              - "--config_root={{job.parameters.config_root}}"
+              - "--git_commit_sha={{job.parameters.git_commit_sha}}"
+              - "--git_branch={{job.parameters.git_branch}}"
+              - "--triggered_by={{job.parameters.triggered_by}}"
+
+    hr_workday_api_extract:
+      name: hr_workday_api_extract
+      parameters:
+        - name: control_catalog
+          default: ${var.control_catalog}
+        - name: environment
+          default: ${var.environment}
+        - name: source_key
+          default: workday
+        - name: subject_area_key
+          default: hr
+        - name: entity_keys
+          default: "*"
+      environments:
+        - environment_key: medallion_env
+          spec:
+            environment_version: "2"
+            dependencies:
+              - ../dist/*.whl
+              - pyyaml
+              - requests
+      tasks:
+        - task_key: extract_to_uc_volume
+          environment_key: medallion_env
+          spark_python_task:
+            python_file: ../src/jobs/api_extract.py
+            parameters:
+              - "--control_catalog={{job.parameters.control_catalog}}"
+              - "--environment={{job.parameters.environment}}"
+              - "--source_key={{job.parameters.source_key}}"
+              - "--subject_area_key={{job.parameters.subject_area_key}}"
+              - "--entity_keys={{job.parameters.entity_keys}}"
+
+    hr_archive_landing:
+      name: hr_archive_landing
+      parameters:
+        - name: control_catalog
+          default: ${var.control_catalog}
+        - name: environment
+          default: ${var.environment}
+        - name: entity_keys
+          default: "*"
+      environments:
+        - environment_key: medallion_env
+          spec:
+            environment_version: "2"
+            dependencies:
+              - ../dist/*.whl
+              - pyyaml
+      tasks:
+        - task_key: archive_after_bronze
+          environment_key: medallion_env
+          spark_python_task:
+            python_file: ../src/jobs/archive_landing.py
+            parameters:
+              - "--control_catalog={{job.parameters.control_catalog}}"
+              - "--environment={{job.parameters.environment}}"
+              - "--entity_keys={{job.parameters.entity_keys}}"
+
+    reprocess_orchestrator:
+      name: reprocess_orchestrator
+      schedule:
+        quartz_cron_expression: "0 0/15 * * * ?"
+        timezone_id: UTC
+        pause_status: PAUSED
+      parameters:
+        - name: control_catalog
+          default: ${var.control_catalog}
+        - name: max_requests
+          default: "20"
+      environments:
+        - environment_key: medallion_env
+          spec:
+            environment_version: "2"
+            dependencies:
+              - ../dist/*.whl
+              - pyyaml
+              - databricks-sdk
+      tasks:
+        - task_key: dispatch_approved_reprocesses
+          environment_key: medallion_env
+          spark_python_task:
+            python_file: ../src/jobs/reprocess_dispatcher.py
+            parameters:
+              - "--control_catalog={{job.parameters.control_catalog}}"
+              - "--max_requests={{job.parameters.max_requests}}"
+              - "--wait_mode=wait"
+              - "--wait_timeout_minutes=120"
+
+    # Orchestration jobs (replaces invalid resources.workflows)
+    hr_workday_orchestration:
+      name: hr_workday_orchestration
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_bronze.id}
+            full_refresh: false
+        - task_key: bronze_restricted
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_bronze_restricted.id}
+            full_refresh: false
+        - task_key: silver
+          depends_on:
+            - task_key: bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_silver.id}
+            full_refresh: false
+        - task_key: silver_restricted
+          depends_on:
+            - task_key: bronze_restricted
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_silver_restricted.id}
+            full_refresh: false
+
+    hr_workday_api_fallback_orchestration:
+      name: hr_workday_api_fallback_orchestration
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: api_extract
+          run_job_task:
+            job_id: ${resources.jobs.hr_workday_api_extract.id}
+        - task_key: bronze
+          depends_on:
+            - task_key: api_extract
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_bronze.id}
+            full_refresh: false
+        - task_key: bronze_restricted
+          depends_on:
+            - task_key: api_extract
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_bronze_restricted.id}
+            full_refresh: false
+        - task_key: archive_landing
+          depends_on:
+            - task_key: bronze
+            - task_key: bronze_restricted
+          run_job_task:
+            job_id: ${resources.jobs.hr_archive_landing.id}
+        - task_key: silver
+          depends_on:
+            - task_key: bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_silver.id}
+            full_refresh: false
+        - task_key: silver_restricted
+          depends_on:
+            - task_key: bronze_restricted
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_silver_restricted.id}
+            full_refresh: false
+
+    reprocess_hr_workday:
+      name: reprocess_hr_workday
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: reprocess_bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_bronze.id}
+            full_refresh: true
+        - task_key: reprocess_bronze_restricted
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_bronze_restricted.id}
+            full_refresh: true
+        - task_key: reprocess_silver
+          depends_on:
+            - task_key: reprocess_bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_silver.id}
+            full_refresh: true
+        - task_key: reprocess_silver_restricted
+          depends_on:
+            - task_key: reprocess_bronze_restricted
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.hr_workday_silver_restricted.id}
+            full_refresh: true
+
+    # --- Sales (Dynamics 365, API extract → Volumes → bronze → silver) ---
+    sales_dynamics365_api_extract:
+      name: sales_dynamics365_api_extract
+      parameters:
+        - name: control_catalog
+          default: ${var.control_catalog}
+        - name: environment
+          default: ${var.environment}
+        - name: source_key
+          default: dynamics365
+        - name: subject_area_key
+          default: sales
+        - name: entity_keys
+          default: "*"
+      environments:
+        - environment_key: medallion_env
+          spec:
+            environment_version: "2"
+            dependencies:
+              - ../dist/*.whl
+              - pyyaml
+              - requests
+      tasks:
+        - task_key: extract_to_uc_volume
+          environment_key: medallion_env
+          spark_python_task:
+            python_file: ../src/jobs/api_extract.py
+            parameters:
+              - "--control_catalog={{job.parameters.control_catalog}}"
+              - "--environment={{job.parameters.environment}}"
+              - "--source_key={{job.parameters.source_key}}"
+              - "--subject_area_key={{job.parameters.subject_area_key}}"
+              - "--entity_keys={{job.parameters.entity_keys}}"
+
+    sales_orchestration:
+      name: sales_orchestration
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: api_extract
+          run_job_task:
+            job_id: ${resources.jobs.sales_dynamics365_api_extract.id}
+        - task_key: bronze
+          depends_on:
+            - task_key: api_extract
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.sales_bronze.id}
+            full_refresh: false
+        - task_key: bronze_restricted
+          depends_on:
+            - task_key: api_extract
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.sales_bronze_restricted.id}
+            full_refresh: false
+        - task_key: silver
+          depends_on:
+            - task_key: bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.sales_silver.id}
+            full_refresh: false
+        - task_key: silver_restricted
+          depends_on:
+            - task_key: bronze_restricted
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.sales_silver_restricted.id}
+            full_refresh: false
+
+    # --- Reference data (Lakeflow Connect → bronze → silver) ---
+    refdata_orchestration:
+      name: refdata_orchestration
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.refdata_bronze.id}
+            full_refresh: false
+        - task_key: silver
+          depends_on:
+            - task_key: bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.refdata_silver.id}
+            full_refresh: false

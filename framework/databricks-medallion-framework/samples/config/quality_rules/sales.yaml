@@ -1,0 +1,19 @@
+entity_key: sales_opportunities
+layer: silver
+
+rules:
+  - rule_name: opportunities_amount_positive
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "amount > 0"
+    action_on_failure: fail
+    severity: critical
+
+  - rule_name: opportunities_valid_stage
+    rule_type: expectation
+    enforcement_method: external_library
+    library_reference: best_practices.valid_stage
+    action_on_failure: warn
+    severity: medium
+    parameters:
+      valid_stages: ["New","Qualified","Proposal","Closed Won","Closed Lost"]

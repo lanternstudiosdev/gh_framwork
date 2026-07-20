@@ -1,0 +1,47 @@
+# Entity-specific quality rules for hr_current_employee_list (Silver layer)
+# These supplement or override global best practices.
+# Merged at deploy time into platform_control.control.quality_rules
+
+entity_key: hr_current_employee_list
+layer: silver
+
+rules:
+  - rule_name: current_employee_hire_date_present_when_active
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "status = 'TERMINATED' OR hire_date IS NOT NULL"
+    action_on_failure: fail
+    severity: critical
+    git_path: "config/quality_rules/hr/current_employee_list.yaml"
+
+  - rule_name: current_employee_hire_date_not_future
+    rule_type: expectation
+    enforcement_method: external_library
+    library_reference: best_practices.no_future_dates
+    parameters:
+      date_col: hire_date
+    action_on_failure: fail
+    severity: high
+    git_path: "config/quality_rules/hr/current_employee_list.yaml"
+
+  - rule_name: current_employee_referential_manager_exists
+    rule_type: referential
+    enforcement_method: external_library
+    library_reference: hr.employees.manager_exists
+    action_on_failure: warn
+    severity: high
+    parameters:
+      reference_entity: hr_current_employee_list
+      reference_column: manager_id
+    git_path: "config/quality_rules/hr/current_employee_list.yaml"
+
+  # Example of a configurable Gold rule (only applied when explicitly enabled)
+  - rule_name: current_employee_gold_headcount_variance
+    layer: gold
+    rule_type: custom
+    enforcement_method: external_library
+    library_reference: hr.employees.headcount_anomaly
+    action_on_failure: log_only
+    severity: medium
+    is_active: false   # Enabled via metadata or reprocess request when needed
+    git_path: "config/quality_rules/hr/current_employee_list.yaml"

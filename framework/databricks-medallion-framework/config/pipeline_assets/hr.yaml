@@ -1,0 +1,144 @@
+# HR pipeline / workflow / job registry (seed for reprocess dispatcher + ops).
+# Applied to control.pipeline_assets by apply_control_config.
+
+subject_area_key: hr
+
+assets:
+  - asset_id: hr_wf_orchestration
+    subject_area_key: hr
+    asset_type: workflow
+    asset_name: hr_workday_orchestration
+    resource_name_in_bundle: hr_workday_orchestration
+    bundle_path: bundles/databricks.yml
+    target_layer: cross
+    supports_reprocess: false
+    default_schedule: on-demand
+    compute_type: serverless
+    is_active: true
+    parameters:
+      path: connect_primary
+
+  - asset_id: hr_wf_reprocess
+    subject_area_key: hr
+    asset_type: workflow
+    asset_name: reprocess_hr_workday
+    resource_name_in_bundle: reprocess_hr_workday
+    bundle_path: bundles/databricks.yml
+    target_layer: cross
+    supports_reprocess: true
+    default_schedule: on-demand
+    compute_type: serverless
+    is_active: true
+    depends_on: []
+    parameters:
+      full_refresh: "true"
+
+  - asset_id: hr_wf_api_fallback
+    subject_area_key: hr
+    asset_type: workflow
+    asset_name: hr_workday_api_fallback_orchestration
+    resource_name_in_bundle: hr_workday_api_fallback_orchestration
+    bundle_path: bundles/databricks.yml
+    target_layer: cross
+    supports_reprocess: false
+    default_schedule: on-demand
+    is_active: true
+    parameters:
+      path: api_volume_fallback
+
+  - asset_id: hr_pl_bronze
+    subject_area_key: hr
+    asset_type: lakeflow_pipeline
+    asset_name: hr_workday_bronze
+    resource_name_in_bundle: hr_workday_bronze
+    git_path: src/pipelines/bronze_entry.py
+    target_layer: bronze
+    supports_reprocess: true
+    is_active: true
+    parameters:
+      restricted_scope: "false"
+
+  - asset_id: hr_pl_bronze_restricted
+    subject_area_key: hr
+    asset_type: lakeflow_pipeline
+    asset_name: hr_workday_bronze_restricted
+    resource_name_in_bundle: hr_workday_bronze_restricted
+    git_path: src/pipelines/bronze_entry.py
+    target_layer: bronze
+    supports_reprocess: true
+    is_active: true
+    parameters:
+      restricted_scope: "true"
+
+  - asset_id: hr_pl_silver
+    subject_area_key: hr
+    asset_type: lakeflow_pipeline
+    asset_name: hr_workday_silver
+    resource_name_in_bundle: hr_workday_silver
+    git_path: src/pipelines/silver_entry.py
+    target_layer: silver
+    supports_reprocess: true
+    is_active: true
+    depends_on: [hr_workday_bronze]
+    parameters:
+      restricted_scope: "false"
+
+  - asset_id: hr_pl_silver_restricted
+    subject_area_key: hr
+    asset_type: lakeflow_pipeline
+    asset_name: hr_workday_silver_restricted
+    resource_name_in_bundle: hr_workday_silver_restricted
+    git_path: src/pipelines/silver_entry.py
+    target_layer: silver
+    supports_reprocess: true
+    is_active: true
+    depends_on: [hr_workday_bronze_restricted]
+    parameters:
+      restricted_scope: "true"
+
+  - asset_id: hr_job_apply
+    subject_area_key: hr
+    asset_type: job
+    asset_name: apply_control_config
+    resource_name_in_bundle: apply_control_config
+    git_path: src/jobs/apply_control_config.py
+    target_layer: cross
+    supports_reprocess: false
+    is_active: true
+
+  - asset_id: hr_job_reprocess_orchestrator
+    subject_area_key: hr
+    asset_type: job
+    asset_name: reprocess_orchestrator
+    resource_name_in_bundle: reprocess_orchestrator
+    git_path: src/jobs/reprocess_dispatcher.py
+    target_layer: cross
+    supports_reprocess: true
+    default_schedule: "0 0/15 * * * ?"
+    is_active: true
+    parameters:
+      max_requests: "20"
+
+  - asset_id: hr_job_api_extract
+    subject_area_key: hr
+    asset_type: job
+    asset_name: hr_workday_api_extract
+    resource_name_in_bundle: hr_workday_api_extract
+    git_path: src/jobs/api_extract.py
+    target_layer: bronze
+    supports_reprocess: false
+    is_active: true
+    parameters:
+      path: fallback_only
+
+  - asset_id: hr_job_archive
+    subject_area_key: hr
+    asset_type: job
+    asset_name: hr_archive_landing
+    resource_name_in_bundle: hr_archive_landing
+    git_path: src/jobs/archive_landing.py
+    target_layer: bronze
+    supports_reprocess: false
+    is_active: true
+    parameters:
+      path: fallback_only

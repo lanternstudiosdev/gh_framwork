@@ -1,0 +1,11 @@
+employee_id,first_name,last_name,department_id,email,hire_date,salary,status
+1,Alice,Smith,10,alice.smith@company.com,2020-03-15,95000,Active
+2,Bob,Johnson,10,bob.johnson@company.com,2019-07-01,82000,Active
+3,Carol,Williams,20,carol.williams@company.com,2021-01-10,78000,Active
+4,David,Brown,20,david.brown@company.com,2018-11-20,105000,Active
+5,Eva,Davis,30,eva.davis@company.com,2022-05-05,65000,Active
+6,Frank,Miller,10,frank.miller@company.com,2023-02-28,88000,Active
+7,Grace,Wilson,30,grace.wilson@company.com,2020-09-14,72000,Terminated
+8,Henry,Moore,20,henry.moore@company.com,2021-06-30,99000,Active
+9,Ivy,Taylor,40,ivy.taylor@company.com,2024-01-15,58000,Active
+10,Jack,Anderson,30,jack.anderson@company.com,2019-04-22,81000,Active

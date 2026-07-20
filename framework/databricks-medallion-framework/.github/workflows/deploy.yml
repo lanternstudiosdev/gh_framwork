@@ -1,0 +1,188 @@
+name: Deploy Medallion Ingestion Framework
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'framework/databricks-medallion-framework/**'
+      - '.github/workflows/deploy.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'framework/databricks-medallion-framework/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target environment (dev/qat/prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [dev, qat, prod]
+      run_smoke:
+        description: 'Run HR bronze smoke after deploy (dev)'
+        required: false
+        default: true
+        type: boolean
+
+# Run from monorepo root; working-directory for framework paths
+defaults:
+  run:
+    working-directory: framework/databricks-medallion-framework
+
+env:
+  DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+  DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+jobs:
+  # ------------------------------------------------------------
+  # 1. Lint + unit tests (every PR/push touching the framework)
+  # ------------------------------------------------------------
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml pytest pyspark databricks-sdk build
+
+      - name: Framework config lint
+        run: python scripts/lint_framework_config.py
+
+      - name: Workspace proof preflight
+        run: python scripts/workspace_proof_preflight.py --env dev
+
+      - name: Unit tests (no local Spark/Java required)
+        run: |
+          # security/expectations tests need Spark JVM or dlt — run registration/sql/volumes only in GHA
+          pytest tests/test_sql_safe.py tests/test_pipeline_registration.py tests/test_volumes.py -v --tb=short
+
+      - name: Build wheel (validates packaging)
+        run: python -m build --wheel -o dist
+
+      - name: Validate declarative config YAML
+        run: |
+          python -c "
+          import yaml, glob
+          for f in glob.glob('config/**/*.yaml', recursive=True):
+              with open(f) as fh:
+                  yaml.safe_load(fh)
+                  print('Validated', f)
+          print('All config files are valid YAML')
+          "
+
+  # ------------------------------------------------------------
+  # 2. Deploy (push main / workflow_dispatch)
+  # ------------------------------------------------------------
+  deploy:
+    needs: ci
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target || 'dev' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build wheel for bundle libraries
+        run: |
+          pip install build
+          python -m build --wheel -o dist
+
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Bundle validate
+        working-directory: framework/databricks-medallion-framework/bundles
+        run: |
+          TARGET=${{ github.event.inputs.target || 'dev' }}
+          databricks bundle validate --target $TARGET
+
+      - name: Deploy bundle (DABs)
+        working-directory: framework/databricks-medallion-framework/bundles
+        run: |
+          TARGET=${{ github.event.inputs.target || 'dev' }}
+          databricks bundle deploy --target $TARGET
+
+      - name: Run Config Apply
+        working-directory: framework/databricks-medallion-framework/bundles
+        run: |
+          TARGET=${{ github.event.inputs.target || 'dev' }}
+          databricks bundle run apply_control_config --target $TARGET
+
+      - name: HR bronze smoke (hard fail)
+        if: |
+          (github.event_name == 'push' || github.event.inputs.target == 'dev' || github.event.inputs.target == '') &&
+          (github.event_name != 'workflow_dispatch' || github.event.inputs.run_smoke != 'false')
+        working-directory: framework/databricks-medallion-framework/bundles
+        run: |
+          TARGET=${{ github.event.inputs.target || 'dev' }}
+          # Hard fail — do not swallow errors
+          databricks bundle run hr_workday_bronze --target $TARGET
+
+  # ------------------------------------------------------------
+  # 3. Reprocess-as-Code (PR changing reprocess_requests)
+  # ------------------------------------------------------------
+  reprocess-request:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: prod-reprocess-approval
+    needs: ci
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Detect reprocess_requests changes
+        id: changes
+        working-directory: framework/databricks-medallion-framework
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q 'config/reprocess_requests/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Databricks CLI
+        if: steps.changes.outputs.changed == 'true'
+        uses: databricks/setup-cli@main
+
+      - name: Build wheel
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: framework/databricks-medallion-framework
+        run: |
+          pip install build
+          python -m build --wheel -o dist
+
+      - name: Deploy + apply + reprocess orchestrator (prod)
+        if: steps.changes.outputs.changed == 'true'
+        working-directory: framework/databricks-medallion-framework/bundles
+        run: |
+          databricks bundle deploy --target prod
+          databricks bundle run apply_control_config --target prod
+          # Dispatcher waits for job completion by default (wait_mode=wait)
+          databricks bundle run reprocess_orchestrator --target prod
+
+      - name: Post approval comment
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Reprocess request path detected: config applied and reprocess_orchestrator triggered in prod. Check Databricks job run history and control.reprocess_requests status.'
+            })

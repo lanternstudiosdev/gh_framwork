@@ -1,0 +1,22 @@
+# Global reusable Silver quality rules
+# These are merged with entity-specific rules during Config Apply.
+
+rules:
+  - rule_name: silver_not_null_business_keys
+    layer: silver
+    rule_type: expectation
+    enforcement_method: both
+    expression: "col IS NOT NULL"
+    library_reference: best_practices.not_null
+    action_on_failure: fail
+    severity: critical
+    is_default: true
+
+  - rule_name: silver_unique_business_key
+    layer: silver
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "COUNT(*) OVER (PARTITION BY {primary_key_columns}) = 1"
+    action_on_failure: fail
+    severity: critical
+    is_default: true

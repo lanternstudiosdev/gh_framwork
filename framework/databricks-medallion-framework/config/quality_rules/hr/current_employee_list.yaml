@@ -1,0 +1,10 @@
+entity_key: hr_current_employee_list
+layer: silver
+rules:
+  - rule_name: current_employee_pk_not_null
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "employee_id IS NOT NULL"
+    action_on_failure: fail
+    severity: critical
+    is_active: true

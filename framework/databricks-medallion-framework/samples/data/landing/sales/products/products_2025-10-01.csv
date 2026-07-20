@@ -1,0 +1,4 @@
+product_id,product_name,category,list_price
+PROD-A,Enterprise License,Software,50000
+PROD-B,Hardware Bundle,Hardware,120000
+PROD-C,Consulting Package,Services,80000

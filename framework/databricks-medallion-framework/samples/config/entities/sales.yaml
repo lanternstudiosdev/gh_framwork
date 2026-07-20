@@ -1,0 +1,83 @@
+# Sample sales entities — source-prefixed table names (dynamics365_*).
+# Default sample path is file/API + Volume; production sales may use Connect later.
+
+subject_area_key: sales
+
+entities:
+  - entity_key: sales_opportunities
+    source_key: dynamics365
+    entity_name: opportunities
+    source_object: opportunities
+    load_pattern: file_incremental
+    primary_key_columns: ["opportunity_id"]
+    watermark_column: "_source_extract_ts"
+    target_bronze_table: dynamics365_opportunities
+    target_silver_table: dynamics365_opportunities
+    restricted: false
+    supports_full_reprocess: true
+    reprocess_strategy: full_refresh
+
+    load_config:
+      landing_volume:
+        volume_catalog: edw_sales_dev
+        volume_schema: files
+        volume_name: landing
+      landing_subpath: raw/dynamics365/opportunities
+      archive_subpath: archive/dynamics365/opportunities
+      auto_loader_options:
+        cloudFiles.format: csv
+        cloudFiles.header: "true"
+        cloudFiles.schemaEvolutionMode: addNewColumns
+      bronze_schema_evolution_mode: addNewColumns
+      bronze_accumulate_history: true
+      silver_schema_evolution_enabled: true
+      silver_allow_new_columns: true
+      silver_preserve_dropped_columns: true
+      silver_enforce_downstream_contract: true
+
+  - entity_key: sales_customers
+    source_key: dynamics365
+    entity_name: customers
+    source_object: customers
+    load_pattern: file_incremental
+    primary_key_columns: ["customer_id"]
+    watermark_column: "_source_extract_ts"
+    target_bronze_table: dynamics365_customers
+    target_silver_table: dynamics365_customers
+    restricted: false
+    supports_full_reprocess: true
+
+    load_config:
+      landing_volume:
+        volume_catalog: edw_sales_dev
+        volume_schema: files
+        volume_name: landing
+      landing_subpath: raw/dynamics365/customers
+      archive_subpath: archive/dynamics365/customers
+      auto_loader_options:
+        cloudFiles.format: csv
+        cloudFiles.header: "true"
+        cloudFiles.schemaEvolutionMode: addNewColumns
+
+  - entity_key: sales_products
+    source_key: dynamics365
+    entity_name: products
+    source_object: products
+    load_pattern: file_incremental
+    primary_key_columns: ["product_id"]
+    watermark_column: "_source_extract_ts"
+    target_bronze_table: dynamics365_products
+    target_silver_table: dynamics365_products
+    restricted: false
+    supports_full_reprocess: true
+
+    load_config:
+      landing_volume:
+        volume_catalog: edw_sales_dev
+        volume_schema: files
+        volume_name: landing
+      landing_subpath: raw/dynamics365/products
+      archive_subpath: archive/dynamics365/products
+      auto_loader_options:
+        cloudFiles.format: csv
+        cloudFiles.header: "true"

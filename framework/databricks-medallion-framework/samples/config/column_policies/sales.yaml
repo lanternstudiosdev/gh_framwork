@@ -1,0 +1,7 @@
+entity_key: sales_opportunities
+
+policies:
+  - column_name: customer_id
+    policy_type: hash
+    apply_starting_layer: silver
+    classification: pii

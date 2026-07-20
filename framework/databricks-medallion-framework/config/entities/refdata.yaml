@@ -1,0 +1,81 @@
+# Reference-data subject area — production entity catalog (SQL source via Lakeflow Connect).
+#
+# STARTER SCAFFOLD — the two entities below are PLACEHOLDERS. Replace entity_key,
+# entity_name, source_object (real table/view names), primary_key_columns, and the
+# lakeflow_connect_config.connection_name with your real reference tables before
+# enabling refdata pipelines. Follow the HR pattern in config/entities/hr.yaml.
+#
+# load_pattern default: lakeflow_connect
+# Table names: {source_key}_{entity_name}  e.g. refdata_sql_country_codes
+# Ownership (Connect path):
+#   Connect writes:  {data_catalog}.bronze.{refdata_sql_*}__src
+#   Framework DLT:   {data_catalog}.bronze.{refdata_sql_*}  (final bronze)
+# {data_catalog} resolves from env: edw_refdata_dev / edw_refdata_qat / edw_refdata_prod.
+
+subject_area_key: refdata
+entities:
+# TODO(refdata): replace with a real reference table (non-restricted example).
+- entity_key: refdata_country_codes
+  source_key: refdata_sql
+  entity_name: country_codes
+  source_object: dbo.CountryCodes          # TODO: real schema.table
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - country_code                            # TODO: real PK column(s)
+  watermark_column: _source_extract_ts
+  target_bronze_table: refdata_sql_country_codes
+  target_silver_table: refdata_sql_country_codes
+  restricted: false
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: false                          # keep inactive until real config verified
+  load_config:
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+      cloudFiles.inferColumnTypes: 'true'
+    bronze_schema_evolution_mode: addNewColumns
+    bronze_accumulate_history: true
+    silver_schema_evolution_enabled: true
+    silver_allow_new_columns: true
+    silver_preserve_dropped_columns: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: dbo.CountryCodes       # TODO: real schema.table
+      connection_name: refdata_sql_connect  # TODO: real UC connection name
+      target_schema: bronze
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect
+
+# TODO(refdata): replace with a real reference table (restricted example).
+- entity_key: refdata_cost_centers
+  source_key: refdata_sql
+  entity_name: cost_centers
+  source_object: dbo.CostCenters           # TODO: real schema.table
+  load_pattern: lakeflow_connect
+  primary_key_columns:
+  - cost_center_id                          # TODO: real PK column(s)
+  watermark_column: _source_extract_ts
+  target_bronze_table: refdata_sql_cost_centers
+  target_silver_table: refdata_sql_cost_centers
+  restricted: true
+  supports_full_reprocess: true
+  reprocess_strategy: full_refresh
+  is_active: false                          # keep inactive until real config verified
+  load_config:
+    auto_loader_options:
+      cloudFiles.format: json
+      cloudFiles.schemaEvolutionMode: addNewColumns
+      cloudFiles.inferColumnTypes: 'true'
+    bronze_schema_evolution_mode: addNewColumns
+    bronze_accumulate_history: true
+    silver_schema_evolution_enabled: true
+    silver_allow_new_columns: true
+    silver_preserve_dropped_columns: true
+    lakeflow_connect_config:
+      mode: incremental
+      source_object: dbo.CostCenters        # TODO: real schema.table
+      connection_name: refdata_sql_connect  # TODO: real UC connection name
+      target_schema: bronze_restricted
+      bronze_writer: framework_dlt
+      connect_writer: lakeflow_connect

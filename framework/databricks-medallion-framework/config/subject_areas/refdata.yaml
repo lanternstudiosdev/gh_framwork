@@ -1,0 +1,36 @@
+# Subject-area defaults for Reference Data (catalogs, volumes, schema naming).
+# Per-environment catalog names use the pattern edw_refdata_{env}.
+#
+# STARTER SCAFFOLD: refdata is not yet productionized. Fill in real entities in
+# config/entities/refdata.yaml and the connection in config/sources/refdata_sql.yaml
+# before enabling refdata_orchestration on a schedule.
+
+subject_area_key: refdata
+description: Shared reference / master data (code tables, dimensions) via SQL source
+
+catalogs:
+  # Resolved with environment: edw_refdata_dev, edw_refdata_qat, edw_refdata_prod
+  data_catalog_pattern: "edw_refdata_{env}"
+  control_catalog_pattern: "edw_platform_control_{env}"
+
+schemas:
+  bronze: bronze
+  silver: silver
+  gold: gold
+  bronze_restricted: bronze_restricted
+  silver_restricted: silver_restricted
+  gold_restricted: gold_restricted
+  files: files
+
+# Landing volume retained for parity; Lakeflow Connect path does not use it.
+landing_volume:
+  volume_schema: files
+  volume_name: landing
+  raw_prefix: raw
+  archive_prefix: archive
+  archive_partitioning: "yyyy/MM/dd"
+
+published_volume:
+  enabled: false
+  volume_schema: files
+  volume_name: published

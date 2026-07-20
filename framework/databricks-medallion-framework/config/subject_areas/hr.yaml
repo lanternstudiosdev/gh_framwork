@@ -1,0 +1,35 @@
+# Subject-area defaults for HR (catalogs, volumes, schema naming).
+# Per-environment catalog names use the pattern edw_hr_{env}.
+
+subject_area_key: hr
+description: Human Resources / Workday domain
+
+catalogs:
+  # Resolved with environment: edw_hr_dev, edw_hr_qat, edw_hr_prod
+  data_catalog_pattern: "edw_hr_{env}"
+  # Platform control (shared across subjects)
+  control_catalog_pattern: "edw_platform_control_{env}"
+
+schemas:
+  bronze: bronze
+  silver: silver
+  gold: gold
+  bronze_restricted: bronze_restricted
+  silver_restricted: silver_restricted
+  gold_restricted: gold_restricted
+  files: files
+
+# UC External Volume for landing (not abfss:// in pipeline code)
+landing_volume:
+  volume_schema: files
+  volume_name: landing
+  raw_prefix: raw
+  archive_prefix: archive
+  # archive_partitioning applied when framework moves files after successful Bronze
+  archive_partitioning: "yyyy/MM/dd"
+
+# Optional published volume — out of scope for v1
+published_volume:
+  enabled: false
+  volume_schema: files
+  volume_name: published

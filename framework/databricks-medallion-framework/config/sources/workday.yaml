@@ -1,0 +1,56 @@
+# Workday source — Lakeflow Connect is the default ingestion path.
+# Secret *names* only in Git; values live in Key Vault → secret scope.
+# Env overlays: config/sources/workday.{env}.yaml
+# Optional API extract remains available if an entity/env sets load_pattern: api_extract.
+
+source_key: workday
+source_type: lakeflow_connect
+subject_area_key: hr
+description: Workday HR via Lakeflow Connect (preferred). API/RaaS extract is fallback only.
+
+# Default for all entities under this source unless overridden on the entity or env overlay
+default_load_pattern: lakeflow_connect
+
+# Lakeflow Connect connection identity (names/refs — not secrets)
+connect:
+  connection_name: workday_connect
+  # Connector-specific options as documented for your Databricks Workday Connect setup
+  connector_type: workday
+  # Optional shared defaults merged into entity lakeflow_connect_config
+  defaults:
+    mode: incremental
+
+# Source-level load defaults inherited by entities that omit them (entity values win).
+# New entities under this source can rely on these instead of repeating them.
+load_defaults:
+  auto_loader_options:
+    cloudFiles.format: json
+    cloudFiles.schemaEvolutionMode: addNewColumns
+
+connection:
+  # Used only when an entity falls back to api_extract
+  base_url: "https://wd2-impl-services1.workday.com"
+  api_path_prefix: "/ccx/service"
+  auth_type: oauth2_client_credentials
+  secret_scope: "kv-hr-dev"
+  secrets:
+    client_id: "workday-client-id"
+    client_secret: "workday-client-secret"
+    refresh_token: "workday-refresh-token"
+    username: "workday-username"
+    password: "workday-password"
+    # Connect may use the same or separate secret names — align to your Connect connection config
+    connect_credentials: "workday-connect-credentials"
+  token_url: "https://wd2-impl-services1.workday.com/ccx/oauth2/token"
+  token_scope: ""
+
+# Defaults for API fallback extract only
+extract_defaults:
+  http_method: GET
+  response_format: json
+  landing_file_format: json
+  timeout_seconds: 120
+  page_size: 1000
+  pagination:
+    style: none
+  common_params: {}

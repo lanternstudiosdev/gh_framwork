@@ -1,0 +1,28 @@
+source_key: workday
+source_type: lakeflow_connect
+subject_area_key: hr
+description: Sample Workday source — Lakeflow Connect default (API extract is fallback only)
+default_load_pattern: lakeflow_connect
+
+connect:
+  connection_name: workday_connect
+  connector_type: workday
+  defaults:
+    mode: incremental
+
+connection:
+  base_url: "https://wd2-impl-services1.workday.com"
+  api_path_prefix: "/ccx/service"
+  auth_type: oauth2_client_credentials
+  secret_scope: "kv-hr-dev"
+  secrets:
+    client_id: "workday-client-id"
+    client_secret: "workday-client-secret"
+  token_url: "https://wd2-impl-services1.workday.com/ccx/oauth2/token"
+
+extract_defaults:
+  http_method: GET
+  response_format: json
+  landing_file_format: json
+  timeout_seconds: 60
+  common_params: {}

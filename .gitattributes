@@ -1,0 +1,29 @@
+# Normalize line endings to LF for all text files.
+# Databricks / Lakeflow runs on Linux, so LF is the canonical form.
+# This prevents "LF will be replaced by CRLF" warnings under core.autocrlf=true.
+* text=auto eol=lf
+
+# Explicit LF for source and config assets.
+*.py    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.sql   text eol=lf
+*.md    text eol=lf
+*.toml  text eol=lf
+*.cfg   text eol=lf
+*.sh    text eol=lf
+
+# Windows-only helper scripts keep CRLF.
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Binary assets — never normalize.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.whl   binary
+*.parquet binary
+*.xlsx  binary

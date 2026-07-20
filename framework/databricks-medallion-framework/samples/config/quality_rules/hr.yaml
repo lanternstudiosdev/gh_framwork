@@ -1,0 +1,17 @@
+entity_key: hr_employees
+layer: silver
+
+rules:
+  - rule_name: employees_email_not_null
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "email IS NOT NULL"
+    action_on_failure: fail
+    severity: high
+
+  - rule_name: employees_salary_positive
+    rule_type: expectation
+    enforcement_method: native_lakeflow
+    expression: "salary > 0"
+    action_on_failure: fail
+    severity: critical

@@ -1,0 +1,35 @@
+# Column-level security policies for hr_current_employee_list
+# Sparse table: only columns requiring special treatment are listed.
+# These drive physical transforms in Silver (and optionally Gold).
+# encryption_key_vault_ref points to Azure Key Vault secret (via Databricks secret scope or direct).
+
+entity_key: hr_current_employee_list
+
+policies:
+  - column_name: compensation
+    policy_type: encrypt
+    encryption_key_vault_ref: "hr-pii-encryption-key"
+    apply_starting_layer: silver
+    classification: sensitive
+    git_path: "config/column_policies/hr/current_employee_list.yaml"
+
+  - column_name: national_id
+    policy_type: hash
+    apply_starting_layer: silver
+    classification: pii
+    git_path: "config/column_policies/hr/current_employee_list.yaml"
+    # Hash is deterministic for join purposes but non-reversible
+
+  - column_name: home_address
+    policy_type: mask
+    apply_starting_layer: silver
+    classification: internal
+    git_path: "config/column_policies/hr/current_employee_list.yaml"
+    # Masking function could be defined in the shared security library
+
+  # Example of tagging without transformation (for Unity Catalog + dynamic masking as additional layer)
+  - column_name: email
+    policy_type: tag_only
+    classification: pii
+    uc_dynamic_mask_function: "hr.pii_mask_email"
+    git_path: "config/column_policies/hr/current_employee_list.yaml"

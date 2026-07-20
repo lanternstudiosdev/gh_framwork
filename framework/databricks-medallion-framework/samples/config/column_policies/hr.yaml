@@ -1,0 +1,12 @@
+entity_key: hr_employees
+
+policies:
+  - column_name: email
+    policy_type: hash
+    apply_starting_layer: silver
+    classification: pii
+
+  - column_name: salary
+    policy_type: hash   # Using hash for sample simplicity with MI (no KV secret needed)
+    apply_starting_layer: silver
+    classification: sensitive

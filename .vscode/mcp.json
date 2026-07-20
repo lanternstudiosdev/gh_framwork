@@ -1,0 +1,9 @@
+﻿{
+  "servers": {
+    "databricks": {
+      "command": "C:/Users/CoreyCrumbaugh/.ai-dev-kit/.venv/Scripts/python.exe",
+      "args": ["C:/Users/CoreyCrumbaugh/.ai-dev-kit/repo/databricks-mcp-server/run_server.py"],
+      "env": {"DATABRICKS_CONFIG_PROFILE": "DEFAULT"}
+    }
+  }
+}

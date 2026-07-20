@@ -1,0 +1,12 @@
+# Smoke reprocess request for workspace proof (option 8/9).
+# After apply: set status to approved (or use GH approval flow) then run reprocess_orchestrator.
+
+request_id: hr-smoke-reprocess-001
+subject_area_key: hr
+requested_entities:
+  - hr_location
+reprocess_mode: full
+from_watermark: "1900-01-01T00:00:00Z"
+to_watermark: null
+reason: "Workspace proof smoke reprocess for workday_location (Connect + bronze/silver)."
+requested_by: platform-team

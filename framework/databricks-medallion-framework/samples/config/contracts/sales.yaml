@@ -1,0 +1,14 @@
+entity_key: sales_opportunities
+version: 1
+schema:
+  columns:
+    - name: opportunity_id
+      type: string
+      primary_key: true
+    - name: amount
+      type: decimal
+    - name: customer_id
+      type: string
+business_rules:
+  - "amount > 0"
+  - "customer_id will be hashed for privacy"

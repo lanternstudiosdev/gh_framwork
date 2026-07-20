@@ -1,0 +1,28 @@
+# Reprocess Request as Code
+# This file is the trigger for the GitOps reprocessing pattern.
+# 1. Engineer creates or updates this file.
+# 2. Opens PR.
+# 3. GitHub Environment protection rules require specific approvers for Production.
+# 4. On approval, the GitHub Action:
+#    - Inserts/updates a row in prod_platform_control.control.reprocess_requests
+#    - Sets status to 'approved'
+#    - Triggers the relevant modular Lakeflow pipeline with reprocess parameters.
+
+request_id: reprocess-hr-employees-2025-10-full
+subject_area_key: hr
+requested_entities:
+  - hr_current_employee_list
+reprocess_mode: full
+from_watermark: "2020-01-01T00:00:00Z"   # For full historical reprocessing
+reason: |
+  Rebuild the full employee history after correction of source data quality
+  issues in Workday (duplicate worker records). See ticket HR-4821.
+requested_by: jane.doe
+source_file_path: "config/reprocess_requests/hr/2025-10-employees-full-reload.yaml"
+git_commit_sha: "{{ GITHUB_SHA }}"   # Populated by the Action at runtime
+github_pr_url: "https://github.com/org/repo/pull/1234"
+
+# After approval the Action will also set:
+# status: approved
+# approved_by: hr-approver1, platform-approver2
+# approved_at: <timestamp>
