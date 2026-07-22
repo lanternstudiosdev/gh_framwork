@@ -10,8 +10,9 @@ Operator and design guides for the Databricks Medallion Ingestion Framework.
 | [04-how-to-add-a-source.md](04-how-to-add-a-source.md) | Step-by-step: new source system |
 | [05-how-to-add-an-entity.md](05-how-to-add-an-entity.md) | Step-by-step: new table/report under a source |
 | [06-control-catalog-and-metadata.md](06-control-catalog-and-metadata.md) | Where metadata lives and how apply works |
-| [08-workspace-proof-runbook.md](08-workspace-proof-runbook.md) | **Live workspace proof** (DDL → Connect → deploy → orch) |
-| [09-reprocess-and-pipeline-assets.md](09-reprocess-and-pipeline-assets.md) | Reprocess flow, schedule, pipeline_assets seed |
+| [07-workspace-proof-runbook.md](07-workspace-proof-runbook.md) | **Live workspace proof** (DDL → Connect → deploy → orch) |
+| [08-reprocess-and-pipeline-assets.md](08-reprocess-and-pipeline-assets.md) | Reprocess flow, schedule, pipeline_assets seed |
+| [09-databricks-asset-bundles.md](09-databricks-asset-bundles.md) | **Beginner guide to Declarative Automation Bundles (DABs)** — deploy, targets, lifecycle |
 
 **Naming (locked):** data schemas only `bronze` / `bronze_restricted` / `silver` / `silver_restricted` / `gold` / `gold_restricted`. Tables use source prefix (e.g. `workday_current_employee_list`). Never `bronze_connect`.
 

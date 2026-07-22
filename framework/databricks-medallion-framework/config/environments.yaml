@@ -1,0 +1,26 @@
+# =============================================================================
+# Environment storage bootstrap for control-plane DDL (sql/control/*.sql)
+# =============================================================================
+# These values are used ONLY by the catalog + schema DDL (MANAGED LOCATION /
+# external VOLUME LOCATION), rendered by scripts/run_control_sql.py.
+#
+# Runtime pipelines and extract jobs NEVER use abfss:// — they read/write
+# through Unity Catalog External Locations + Volumes. This file is the single
+# place to update the storage account when it changes for an environment.
+#
+# The runner substitutes two tokens in the SQL:
+#   {storage_account}  -> environments.<env>.storage_account (below)
+#   {env}              -> the --env value (dev | qat | prod)
+#
+# Container names follow the pattern edw-{subject}-{env} (e.g. edw-hr-dev). The
+# SQL keeps the subject literal (edw-hr-{env}) and the runner fills in {env}.
+
+environments:
+  dev:
+    storage_account: azrcedwdevsto001
+  qat:
+    # TODO: confirm the QAT ADLS Gen2 storage account name
+    storage_account: azrcedwqatsto001
+  prod:
+    # TODO: confirm the PROD ADLS Gen2 storage account name
+    storage_account: azrcedwprodsto001

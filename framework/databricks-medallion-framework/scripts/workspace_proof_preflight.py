@@ -48,10 +48,11 @@ def main() -> int:
 
     # Required paths
     required = [
-        "sql/control/00_create_catalog_and_schema.sql",
-        "sql/control/01_control_tables.sql",
-        "sql/control/02_hr_data_catalog_skeleton.sql",
+        "sql/control/00_create_catalogs.sql",
+        "sql/control/01_create_schemas.sql",
+        "sql/control/02_control_tables.sql",
         "sql/control/03_workspace_proof_checks.sql",
+        "config/environments.yaml",
         "config/entities/hr.yaml",
         "config/sources/workday.yaml",
         "config/pipeline_assets/hr.yaml",
@@ -59,8 +60,8 @@ def main() -> int:
         "bundles/databricks.yml",
         "src/jobs/apply_control_config.py",
         "src/jobs/reprocess_dispatcher.py",
-        "docs/08-workspace-proof-runbook.md",
-        "docs/09-reprocess-and-pipeline-assets.md",
+        "docs/07-workspace-proof-runbook.md",
+        "docs/08-reprocess-and-pipeline-assets.md",
     ]
     for rel in required:
         p = ROOT / rel
@@ -147,14 +148,17 @@ def main() -> int:
         print("-" * 60)
         if shutil.which("databricks"):
             ok("databricks CLI on PATH")
+            # Map the environment (dev/qat/prod) to a DAB target. The dev
+            # environment has two targets; validate the default personal one.
+            bundle_target = "dev_personal" if args.env == "dev" else args.env
             r = subprocess.run(
-                ["databricks", "bundle", "validate", "--target", args.env],
+                ["databricks", "bundle", "validate", "--target", bundle_target],
                 cwd=str(ROOT),
                 capture_output=True,
                 text=True,
             )
             if r.returncode == 0:
-                ok(f"databricks bundle validate --target {args.env}")
+                ok(f"databricks bundle validate --target {bundle_target}")
             else:
                 warn(
                     f"bundle validate failed (auth/workspace?): {r.stderr[:500] or r.stdout[:500]}"
@@ -167,10 +171,10 @@ def main() -> int:
         print(f"PREFLIGHT FAILED ({len(errors)} issue(s))")
         for e in errors:
             print(f"  - {e}")
-        print("\nNext: fix issues, then follow docs/08-workspace-proof-runbook.md")
+        print("\nNext: fix issues, then follow docs/07-workspace-proof-runbook.md")
         return 1
 
-    print("PREFLIGHT OK — proceed with docs/08-workspace-proof-runbook.md in the workspace")
+    print("PREFLIGHT OK — proceed with docs/07-workspace-proof-runbook.md in the workspace")
     print(
         f"Catalogs for {args.env}: edw_platform_control_{args.env}, edw_hr_{args.env}"
     )

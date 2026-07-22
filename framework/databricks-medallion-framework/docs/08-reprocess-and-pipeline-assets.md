@@ -1,4 +1,4 @@
-# Reprocess and pipeline_assets (option 9)
+# Reprocess and pipeline_assets (option 8)
 
 ## pipeline_assets (GitOps)
 

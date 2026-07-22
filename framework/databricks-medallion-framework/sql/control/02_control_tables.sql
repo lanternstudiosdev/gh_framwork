@@ -2,7 +2,16 @@
 -- Control plane tables — medallion ingestion framework
 -- =============================================================================
 -- Target: {control_catalog}.control.*
--- Default DEV catalog name used below: edw_platform_control_dev
+-- TEMPLATED — the {env} token below is rendered by scripts/run_control_sql.py
+-- (--env dev|qat|prod). Run with --dry-run to print paste-ready SQL.
+--
+-- HOW TO RUN THIS FILE (no SQL Warehouse required) — pick ONE:
+--   1. From VS Code, no warehouse:
+--        python scripts/run_control_sql.py --env dev
+--      (uses Databricks Connect on serverless compute; see scripts/README.md)
+--   2. In a Databricks notebook: paste into a %sql cell, or use a SQL notebook.
+--   3. In the Databricks SQL editor / a SQL Warehouse (if you have one).
+--   Databricks Connect: https://learn.microsoft.com/azure/databricks/dev-tools/databricks-connect/python/
 --
 -- Complex / free-form config is stored as STRING (JSON) so Config Apply can
 -- upsert via Spark createDataFrame without MAP type friction. Readers in
@@ -11,7 +20,10 @@
 -- Provenance columns (last_applied_*) are written by apply_control_config.
 -- =============================================================================
 
-USE CATALOG edw_platform_control_dev;
+-- USE CATALOG / USE SCHEMA set the "current" catalog + schema so the unqualified
+-- table names below resolve. The {env} token is filled in by the runner
+-- (--env qat / --env prod); for a notebook, run with --dry-run and paste.
+USE CATALOG edw_platform_control_{env};
 USE SCHEMA control;
 
 -- ---------------------------------------------------------------------------
@@ -23,6 +35,7 @@ CREATE TABLE IF NOT EXISTS config_deployments (
     git_branch                 STRING,
     triggered_by               STRING,
     target_control_catalog     STRING,
+    dab_target                 STRING,              -- DAB target: dev_personal | dev_shared | qat | prod
     status                     STRING,              -- running | success | failed
     started_ts                 TIMESTAMP,
     completed_ts               TIMESTAMP,

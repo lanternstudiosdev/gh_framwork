@@ -7,7 +7,8 @@ Production Config Apply job for the Databricks Medallion Ingestion Framework.
 - Resolves UC Volume landing paths (never abfss:// in pipeline code).
 - Records provenance on every row.
 
-Run: databricks bundle run apply_control_config --target dev
+Run: databricks bundle run apply_control_config --target dev_personal
+     (use --target dev_shared / qat / prod for the other environments)
 """
 
 from __future__ import annotations
@@ -57,6 +58,10 @@ GIT_BRANCH = _get_param("git_branch", "main")
 TRIGGERED_BY = _get_param("triggered_by", "local")
 CONFIG_ROOT = _get_param("config_root", "config")
 ENVIRONMENT = _get_param("environment", "dev")
+# DAB target that launched this apply (dev_personal | dev_shared | qat | prod).
+# Passed by the bundle job as ${bundle.target}; defaults to 'local' when the
+# script is run by hand outside a bundle. Recorded in control.config_deployments.
+DAB_TARGET = _get_param("dab_target", "local")
 
 CONTROL_SCHEMA = "control"
 DEPLOYMENT_ID = f"deploy-{GIT_COMMIT_SHA[:8]}-{int(datetime.now(timezone.utc).timestamp())}"
@@ -64,6 +69,7 @@ DEPLOYMENT_ID = f"deploy-{GIT_COMMIT_SHA[:8]}-{int(datetime.now(timezone.utc).ti
 print("Config Apply starting")
 print(f"  Target catalog : {TARGET_CONTROL_CATALOG}")
 print(f"  Environment    : {ENVIRONMENT}")
+print(f"  DAB target     : {DAB_TARGET}")
 print(f"  Git commit     : {GIT_COMMIT_SHA}")
 print(f"  Deployment ID  : {DEPLOYMENT_ID}")
 
@@ -131,6 +137,7 @@ def record_deployment_start() -> None:
             GIT_BRANCH,
             TRIGGERED_BY,
             TARGET_CONTROL_CATALOG,
+            DAB_TARGET,
         )
     except Exception as e:
         print(f"WARNING: could not write config_deployments start row: {e}")

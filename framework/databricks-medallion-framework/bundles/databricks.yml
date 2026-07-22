@@ -39,10 +39,54 @@ variables:
     description: Environment name (dev/qat/prod)
     default: dev
 
+# -----------------------------------------------------------------------------
+# targets = the named DEPLOYMENT ENVIRONMENTS this bundle can be deployed to.
+# You pick one on the CLI with:  databricks bundle deploy --target <name>
+#
+# We define FOUR targets:
+#   dev_personal  Each engineer's OWN sandbox. mode: development makes the CLI
+#                 deploy into YOUR personal workspace home folder
+#                 (/Workspace/Users/<you>/.bundle/...) and prefix every job /
+#                 pipeline name with "[dev <you>]" so two engineers never
+#                 collide. Schedules are auto-paused. This is the DEFAULT.
+#   dev_shared    ONE shared team/integration sandbox in the workspace proper
+#                 (/Workspace/Shared/...). Everyone + CI see the SAME set of
+#                 resources (stable "[dev_shared]" name prefix). Use this from
+#                 the CI/CD pipeline and for shared demos.
+#   qat           Quality Assurance / Test environment (edw_*_qat catalogs).
+#   prod          Production (edw_*_prod catalogs). mode: production removes the
+#                 dev conveniences (no name prefix, schedules run).
+#
+# dev_personal + dev_shared BOTH point at the shared dev data catalogs
+# (edw_*_dev) and environment=dev — they differ only in WHERE the bundle's
+# jobs/pipelines are deployed, not which data they read/write.
+#
+# Docs: deployment modes  https://learn.microsoft.com/azure/databricks/dev-tools/bundles/deployment-modes
+#       targets            https://learn.microsoft.com/azure/databricks/dev-tools/bundles/settings
+#       presets            https://learn.microsoft.com/azure/databricks/dev-tools/bundles/deployment-modes#custom-presets
+# -----------------------------------------------------------------------------
 targets:
-  dev:
+  # Per-developer sandbox (deploys to YOUR personal workspace folder). Default.
+  dev_personal:
     mode: development
     default: true
+    variables:
+      control_catalog: edw_platform_control_dev
+      hr_catalog: edw_hr_dev
+      sales_catalog: edw_sales_dev
+      refdata_catalog: edw_refdata_dev
+      environment: dev
+
+  # Shared team / CI sandbox (deploys to the workspace's shared folder so the
+  # whole team and CI see one identical set of resources).
+  dev_shared:
+    mode: development
+    presets:
+      # Replaces the default per-user "[dev <you>]" prefix with a stable shared
+      # one so redeploys by different people/CI update the SAME resources.
+      name_prefix: '[dev_shared] '
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/dev_shared
     variables:
       control_catalog: edw_platform_control_dev
       hr_catalog: edw_hr_dev
@@ -283,6 +327,12 @@ resources:
           default: main
         - name: triggered_by
           default: bundle
+        - name: dab_target
+          # ${bundle.target} is a built-in that resolves to the --target name
+          # (dev_personal | dev_shared | qat | prod). Recorded in the
+          # control.config_deployments audit table so every apply row shows
+          # which environment it came from.
+          default: ${bundle.target}
       environments:
         - environment_key: medallion_env
           spec:
@@ -303,6 +353,7 @@ resources:
               - "--git_commit_sha={{job.parameters.git_commit_sha}}"
               - "--git_branch={{job.parameters.git_branch}}"
               - "--triggered_by={{job.parameters.triggered_by}}"
+              - "--dab_target={{job.parameters.dab_target}}"
 
     hr_workday_api_extract:
       name: hr_workday_api_extract

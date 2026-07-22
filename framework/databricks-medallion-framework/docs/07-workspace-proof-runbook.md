@@ -1,4 +1,4 @@
-# Workspace proof runbook (option 8)
+# Workspace proof runbook (option 7)
 
 Prove the HR path end-to-end in a **live** Databricks workspace.
 
@@ -8,7 +8,10 @@ Prove the HR path end-to-end in a **live** Databricks workspace.
 DDL → Connect (__src) → bundle deploy → config apply → orchestration → verify
 ```
 
-Target example: **dev** (`edw_platform_control_dev`, `edw_hr_dev`).
+Target example: environment **dev** (`edw_platform_control_dev`, `edw_hr_dev`),
+deployed with the DAB target **`dev_personal`** (your personal sandbox — the
+default). Use `dev_shared` for a shared/CI deploy. See
+[docs/09 — Declarative Automation Bundles](09-databricks-asset-bundles.md).
 
 ---
 
@@ -35,15 +38,46 @@ pytest tests/ -q
 
 ## Phase A — Control + HR catalog DDL
 
-Run in a SQL warehouse / notebook against the workspace (edit storage LOCATION URLs first):
+Run the control-plane DDL against the workspace. The storage account per
+environment is set once in
+[`config/environments.yaml`](../config/environments.yaml) — no per-file URL
+edits. The `.sql` files are **templates** (they contain `{env}` and
+`{storage_account}` tokens); the runner fills these in, so don't paste the raw
+files. You can do this **without a SQL Warehouse** — pick whichever fits:
+
+- **From VS Code (no warehouse):** run the helper, which executes the DDL on
+  serverless compute via Databricks Connect (see [scripts/README.md](../scripts/README.md)):
+
+  ```bash
+  python scripts/run_control_sql.py --env dev
+  ```
+
+- **In a notebook / SQL Warehouse / SQL editor:** first print the rendered,
+  paste-ready SQL, then paste it into a `%sql` cell or the SQL editor:
+
+  ```bash
+  python scripts/run_control_sql.py --env dev --dry-run
+  ```
+
+> **qat / prod:** the storage account names for `qat` and `prod` in
+> `config/environments.yaml` are placeholders — confirm the real ADLS Gen2
+> account names before running against those environments.
+
+Files, in order:
 
 ```text
-sql/control/00_create_catalog_and_schema.sql
-sql/control/01_control_tables.sql
-sql/control/02_hr_data_catalog_skeleton.sql
+sql/control/00_create_catalogs.sql       # catalogs (admin-owned; may run outside DAB)
+sql/control/01_create_schemas.sql        # schemas + external volumes
+sql/control/02_control_tables.sql        # control tables + views
 ```
 
-Verify:
+Verify — from VS Code (no warehouse):
+
+```bash
+python scripts/show_tables.py --env dev
+```
+
+…or with SQL (notebook / warehouse):
 
 ```sql
 SHOW SCHEMAS IN edw_platform_control_dev;
@@ -61,7 +95,7 @@ Expected schemas on `edw_hr_dev`:
 
 1. Create / confirm Lakeflow Connect **connection** named consistently with config  
    (e.g. `workday_connect` / `workday_connect_dev` from env overlay).
-2. For a **smoke set** (start small), provision Connect to land into:
+2. For a **smoke test set** (start small), provision Connect to land into:
 
 | Entity | Connect writes (staging) | Framework bronze owns |
 |--------|--------------------------|------------------------|
@@ -74,7 +108,7 @@ Expected schemas on `edw_hr_dev`:
 Verify:
 
 ```sql
--- Adjust names if smoke set differs
+-- Adjust names if smoke test set differs
 SELECT COUNT(*) AS n FROM edw_hr_dev.bronze.workday_current_employee_list__src;
 SELECT COUNT(*) AS n FROM edw_hr_dev.bronze.workday_location__src;
 ```
@@ -100,9 +134,9 @@ python -m build --wheel -o dist
 
 # From the bundle directory
 cd bundles
-databricks bundle validate --target dev
-databricks bundle deploy --target dev
-databricks bundle run apply_control_config --target dev
+databricks bundle validate --target dev_personal
+databricks bundle deploy --target dev_personal
+databricks bundle run apply_control_config --target dev_personal
 ```
 
 **Deploy notes (P0):**
@@ -153,16 +187,16 @@ Also run SQL checks file: `sql/control/03_workspace_proof_checks.sql`.
 
 ```bash
 # Full HR path (standard + restricted in parallel)
-databricks bundle run hr_workday_orchestration --target dev
+databricks bundle run hr_workday_orchestration --target dev_personal
 ```
 
 Or stepwise:
 
 ```bash
-databricks bundle run hr_workday_bronze --target dev
-databricks bundle run hr_workday_bronze_restricted --target dev
-databricks bundle run hr_workday_silver --target dev
-databricks bundle run hr_workday_silver_restricted --target dev
+databricks bundle run hr_workday_bronze --target dev_personal
+databricks bundle run hr_workday_bronze_restricted --target dev_personal
+databricks bundle run hr_workday_silver --target dev_personal
+databricks bundle run hr_workday_silver_restricted --target dev_personal
 ```
 
 Verify:
@@ -181,7 +215,7 @@ DESCRIBE TABLE edw_hr_dev.bronze.workday_location;
 
 ---
 
-## Phase E — Reprocess proof (option 9 path)
+## Phase E — Reprocess proof (see [docs/08](08-reprocess-and-pipeline-assets.md))
 
 1. Add / ensure a request under `config/reprocess_requests/` (see sample).
 2. Apply config so row lands with status `submitted` (or update to `approved` for manual test).
@@ -196,7 +230,7 @@ WHERE request_id = 'hr-smoke-reprocess-001';
 4. Run dispatcher (scheduled every 15 min in DABs, or manual):
 
 ```bash
-databricks bundle run reprocess_orchestrator --target dev
+databricks bundle run reprocess_orchestrator --target dev_personal
 ```
 
 5. Verify:
@@ -247,6 +281,6 @@ Expect: status moves `approved` → `executing` (then `completed` / `failed` dep
 
 - [02-ingestion-patterns-connect-vs-volumes.md](02-ingestion-patterns-connect-vs-volumes.md)
 - [06-control-catalog-and-metadata.md](06-control-catalog-and-metadata.md)
-- [09-reprocess-and-pipeline-assets.md](09-reprocess-and-pipeline-assets.md)
+- [08-reprocess-and-pipeline-assets.md](08-reprocess-and-pipeline-assets.md)
 - `sql/control/03_workspace_proof_checks.sql`
 - `scripts/workspace_proof_preflight.py`

@@ -126,8 +126,8 @@ Not required for a minimal Bronze land.
 ### 6. Apply config
 
 ```bash
-databricks bundle deploy --target dev
-databricks bundle run apply_control_config --target dev
+databricks bundle deploy --target dev_personal
+databricks bundle run apply_control_config --target dev_personal
 ```
 
 Verify:

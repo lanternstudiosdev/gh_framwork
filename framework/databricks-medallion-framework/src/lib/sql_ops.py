@@ -98,21 +98,23 @@ def insert_deployment_start(
     git_branch: str,
     triggered_by: str,
     target_control_catalog: str,
+    dab_target: str = "",
 ) -> None:
     """Insert a 'running' row into control.config_deployments to open an audit trail
-    for a Config Apply run (git provenance + who triggered it). Pair with
-    :func:`update_deployment_end` to close it out."""
+    for a Config Apply run (git provenance + who triggered it + which DAB target).
+    Pair with :func:`update_deployment_end` to close it out."""
     full = qualified_table(catalog, schema, "config_deployments")
     sql = f"""
     INSERT INTO {full}
     (deployment_id, git_commit_sha, git_branch, triggered_by, target_control_catalog,
-     status, started_ts, tables_applied)
+     dab_target, status, started_ts, tables_applied)
     VALUES (
         {sql_str(deployment_id)},
         {sql_str(git_commit_sha)},
         {sql_str(git_branch)},
         {sql_str(triggered_by)},
         {sql_str(target_control_catalog)},
+        {sql_str(dab_target)},
         'running',
         current_timestamp(),
         array()
