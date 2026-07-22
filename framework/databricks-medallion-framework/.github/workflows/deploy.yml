@@ -14,13 +14,13 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Target environment (dev/qat/prod)'
+        description: 'DAB target (dev_shared/qat/prod). CI deploys to the shared sandbox, not personal.'
         required: true
-        default: 'dev'
+        default: 'dev_shared'
         type: choice
-        options: [dev, qat, prod]
+        options: [dev_shared, qat, prod]
       run_smoke:
-        description: 'Run HR bronze smoke after deploy (dev)'
+        description: 'Run HR bronze smoke after deploy (dev_shared)'
         required: false
         default: true
         type: boolean
@@ -84,7 +84,7 @@ jobs:
     needs: ci
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.target || 'dev' }}
+    environment: ${{ github.event.inputs.target || 'dev_shared' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -105,28 +105,28 @@ jobs:
       - name: Bundle validate
         working-directory: framework/databricks-medallion-framework/bundles
         run: |
-          TARGET=${{ github.event.inputs.target || 'dev' }}
+          TARGET=${{ github.event.inputs.target || 'dev_shared' }}
           databricks bundle validate --target $TARGET
 
       - name: Deploy bundle (DABs)
         working-directory: framework/databricks-medallion-framework/bundles
         run: |
-          TARGET=${{ github.event.inputs.target || 'dev' }}
+          TARGET=${{ github.event.inputs.target || 'dev_shared' }}
           databricks bundle deploy --target $TARGET
 
       - name: Run Config Apply
         working-directory: framework/databricks-medallion-framework/bundles
         run: |
-          TARGET=${{ github.event.inputs.target || 'dev' }}
+          TARGET=${{ github.event.inputs.target || 'dev_shared' }}
           databricks bundle run apply_control_config --target $TARGET
 
       - name: HR bronze smoke (hard fail)
         if: |
-          (github.event_name == 'push' || github.event.inputs.target == 'dev' || github.event.inputs.target == '') &&
+          (github.event_name == 'push' || github.event.inputs.target == 'dev_shared' || github.event.inputs.target == '') &&
           (github.event_name != 'workflow_dispatch' || github.event.inputs.run_smoke != 'false')
         working-directory: framework/databricks-medallion-framework/bundles
         run: |
-          TARGET=${{ github.event.inputs.target || 'dev' }}
+          TARGET=${{ github.event.inputs.target || 'dev_shared' }}
           # Hard fail — do not swallow errors
           databricks bundle run hr_workday_bronze --target $TARGET
 

@@ -100,6 +100,6 @@ connection:
 
 | Script | Purpose |
 |--------|---------|
-| `sql/control/00_create_catalog_and_schema.sql` | Control catalog |
-| `sql/control/01_control_tables.sql` | All control tables |
-| `sql/control/02_hr_data_catalog_skeleton.sql` | HR schemas + volumes |
+| `sql/control/00_create_catalogs.sql` | Control + subject data catalogs |
+| `sql/control/01_create_schemas.sql` | Control schema + HR schemas + volumes |
+| `sql/control/02_control_tables.sql` | All control tables |

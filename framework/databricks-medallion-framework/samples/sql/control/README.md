@@ -6,13 +6,13 @@ DDL for running medallion **samples** against the same control model as producti
 
 | File | Purpose |
 |------|---------|
-| `00_create_catalog_and_schema.sql` | Control catalog + `control` schema |
-| `01_control_tables.sql` | Same table shapes as `sql/control/01_control_tables.sql` |
-| `02_hr_data_catalog_skeleton.sql` | `edw_hr_dev` + `files.landing` volume |
+| `00_create_catalogs.sql` | Control catalog + HR data catalog (admin-owned; may run outside DAB) |
+| `01_create_schemas.sql` | `control` schema + `edw_hr_dev` medallion schemas + `files.landing` / `published` volumes |
+| `02_control_tables.sql` | Same table shapes as `sql/control/02_control_tables.sql` |
 
 ## How samples use control
 
-1. Run `00` → `01` → `02` (edit storage LOCATION URLs).
+1. Run `00` → `01` → `02` (storage account comes from `config/environments.yaml`).
 2. Apply **sample** YAML into control tables (set `config_root` to `samples/config` when running apply), **or** apply production `config/` if you are testing full HR entities.
 3. Copy seed/generated files into the volume:
 

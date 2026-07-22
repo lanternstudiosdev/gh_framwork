@@ -30,13 +30,22 @@ samples/
 ## Prerequisites
 
 1. Unity Catalog + Access Connector + external location for HR (and sales if used).
-2. Run `samples/sql/control/00` → `01` → `02` (edit storage LOCATION URLs).
+2. Run `samples/sql/control/00` → `01` → `02` (the storage account comes from
+   `config/environments.yaml`).
+   **No SQL Warehouse required** — from VS Code run
+   `python scripts/run_control_sql.py --env dev --files samples/sql/control/00_create_catalogs.sql samples/sql/control/01_create_schemas.sql samples/sql/control/02_control_tables.sql`
+   (or paste each file into a notebook `%sql` cell). See
+   [../scripts/README.md](../scripts/README.md).
 3. Secret scope for demos (`kv-hr-dev` names match config).
 4. For **Connect path**: provision Lakeflow Connect to write  
    `edw_hr_dev.bronze.workday_employees__src` (and departments).  
    Framework bronze owns `edw_hr_dev.bronze.workday_employees`.
 5. For **Volume fallback demos**: copy seed CSVs into  
    `/Volumes/edw_hr_dev/files/landing/raw/workday/employees/` etc.
+
+> New to bundles/targets? The samples deploy through the same bundle as the
+> framework — see [../docs/09-databricks-asset-bundles.md](../docs/09-databricks-asset-bundles.md)
+> (targets: `dev_personal`, `dev_shared`, `qat`, `prod`).
 
 ---
 

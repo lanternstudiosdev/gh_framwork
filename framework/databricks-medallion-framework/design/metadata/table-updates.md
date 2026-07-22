@@ -5,8 +5,8 @@ All tables live in **`{control_catalog}.control`** where
 
 **Executable DDL (source of truth for column lists):**
 
-- Framework: [`sql/control/01_control_tables.sql`](../../sql/control/01_control_tables.sql)
-- Samples: [`samples/sql/control/01_control_tables.sql`](../../samples/sql/control/01_control_tables.sql)
+- Framework: [`sql/control/02_control_tables.sql`](../../sql/control/02_control_tables.sql)
+- Samples: [`samples/sql/control/02_control_tables.sql`](../../samples/sql/control/02_control_tables.sql)
 
 This document summarizes purpose and usage. Prefer the SQL files when provisioning.
 

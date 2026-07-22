@@ -6,7 +6,8 @@
 | Area | State |
 |------|--------|
 | Control catalog DDL | `sql/control/` |
-| HR catalog skeleton DDL | `sql/control/02_hr_data_catalog_skeleton.sql` |
+| Catalog DDL (control + subject data catalogs) | `sql/control/00_create_catalogs.sql` |
+| Schema + volume DDL | `sql/control/01_create_schemas.sql` |
 | Config (sources, 13 HR entities, overlays) | `config/` |
 | Volume helpers + config merge | `src/lib/volumes.py`, `config_merge.py` |
 | Config Apply, API extract, archive | `src/jobs/` |

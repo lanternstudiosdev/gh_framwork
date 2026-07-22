@@ -3,8 +3,8 @@
 Place reprocess request YAML files in this directory (or subdirectories per subject area).
 
 **Smoke sample:** [`hr/smoke-reprocess-location.yaml`](hr/smoke-reprocess-location.yaml)  
-**Full docs:** [`docs/09-reprocess-and-pipeline-assets.md`](../../docs/09-reprocess-and-pipeline-assets.md)  
-**Workspace proof:** [`docs/08-workspace-proof-runbook.md`](../../docs/08-workspace-proof-runbook.md)
+**Full docs:** [`docs/08-reprocess-and-pipeline-assets.md`](../../docs/08-reprocess-and-pipeline-assets.md)  
+**Workspace proof:** [`docs/07-workspace-proof-runbook.md`](../../docs/07-workspace-proof-runbook.md)
 
 ## Flow
 
@@ -26,7 +26,7 @@ Place reprocess request YAML files in this directory (or subdirectories per subj
 | `pipeline_assets` | Seeded from `config/pipeline_assets/` |
 | `watermark_state` | Forced for reprocess window |
 
-DDL: [`sql/control/01_control_tables.sql`](../../sql/control/01_control_tables.sql)
+DDL: [`sql/control/02_control_tables.sql`](../../sql/control/02_control_tables.sql)
 
 Status: `submitted` → `approved` → `executing` → `completed` | `failed`.
 

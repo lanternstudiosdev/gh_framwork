@@ -25,7 +25,6 @@ entities:
         source_object: employees
         connection_name: workday_connect
         target_schema: bronze
-        connect_output_table: "{data_catalog}.bronze.workday_employees__src"
         bronze_writer: framework_dlt
         connect_writer: lakeflow_connect
       # Fallback path if load_pattern overridden to api_extract
@@ -71,7 +70,6 @@ entities:
         source_object: departments
         connection_name: workday_connect
         target_schema: bronze
-        connect_output_table: "{data_catalog}.bronze.workday_departments__src"
         bronze_writer: framework_dlt
         connect_writer: lakeflow_connect
       landing_volume:

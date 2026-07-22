@@ -2,6 +2,12 @@
 
 GitOps-driven medallion (Bronze → Silver → Gold) platform for Azure Databricks.
 
+> **New to Databricks, VS Code, or bundles?** Read
+> [docs/09 — Declarative Automation Bundles (DABs), a beginner's guide](docs/09-databricks-asset-bundles.md)
+> first, then follow [docs/07 — workspace proof runbook](docs/07-workspace-proof-runbook.md).
+> You can run the setup SQL and inspect the catalog **without a SQL Warehouse** —
+> see [scripts/README.md](scripts/README.md).
+
 **First production subject area: HR (Workday).**  
 Landing uses **Unity Catalog External Volumes** (not ad-hoc `abfss://` paths in pipeline code).  
 Platform metadata lives in a **separate control catalog**.
@@ -26,7 +32,7 @@ Platform metadata lives in a **separate control catalog**.
 
 ```text
 config/                 # GitOps YAML (sources, entities, quality, contracts, …)
-sql/control/            # DDL for control + HR catalog skeleton
+sql/control/            # DDL: catalogs (00), schemas+volumes (01), control tables (02)
 src/lib/                # metadata, volumes, security, expectations
 src/jobs/               # apply_control_config, api_extract, archive_landing, reprocess
 src/pipelines/hr/       # Production HR Bronze + Silver (dynamic multi-entity)
@@ -40,10 +46,10 @@ tests/                  # Unit tests (volume helpers, libs)
 ## End-to-end flow (HR / Workday — Connect default)
 
 ```text
-1. DDL             sql/control/*.sql
+1. DDL             sql/control/*.sql  (or: python scripts/run_control_sql.py --env dev)
 2. Connect setup   Lakeflow Connect connection + objects for Workday
-3. Deploy          databricks bundle deploy --target dev
-4. Config apply    databricks bundle run apply_control_config --target dev
+3. Deploy          databricks bundle deploy --target dev_personal
+4. Config apply    databricks bundle run apply_control_config --target dev_personal
 5. Bronze          hr_workday_bronze (+ hr_workday_bronze_restricted)
 6. Silver          hr_workday_silver (+ hr_workday_silver_restricted)
 ```
@@ -80,8 +86,8 @@ Adding an entity under an existing dynamic subject is usually **config only** (n
 | [docs/04-how-to-add-a-source.md](docs/04-how-to-add-a-source.md) | Add a source (step-by-step) |
 | [docs/05-how-to-add-an-entity.md](docs/05-how-to-add-an-entity.md) | Add a table/entity (step-by-step) |
 | [docs/06-control-catalog-and-metadata.md](docs/06-control-catalog-and-metadata.md) | Control catalog map |
-| [docs/08-workspace-proof-runbook.md](docs/08-workspace-proof-runbook.md) | Live workspace proof |
-| [docs/09-reprocess-and-pipeline-assets.md](docs/09-reprocess-and-pipeline-assets.md) | Reprocess + pipeline_assets |
+| [docs/07-workspace-proof-runbook.md](docs/07-workspace-proof-runbook.md) | Live workspace proof |
+| [docs/08-reprocess-and-pipeline-assets.md](docs/08-reprocess-and-pipeline-assets.md) | Reprocess + pipeline_assets |
 
 **Also:**
 
